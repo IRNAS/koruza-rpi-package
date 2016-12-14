@@ -1,0 +1,11 @@
+[Unit]
+Description=sfp-driver
+After=ubus.service
+
+[Service]
+ExecStart=/usr/bin/sfp-driver
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+

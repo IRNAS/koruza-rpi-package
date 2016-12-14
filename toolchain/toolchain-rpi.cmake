@@ -1,0 +1,11 @@
+SET(CMAKE_SYSTEM_NAME Linux)
+SET(CMAKE_C_COMPILER /rpxc/bin/arm-linux-gnueabihf-gcc)
+SET(CMAKE_CXX_COMPILER /rpxc/bin/arm-linux-gnueabihf-g++)
+
+SET(CMAKE_FIND_ROOT_PATH  /rpxc/sysroot /build/build/install-root)
+SET(PKG_CONFIG_EXECUTABLE /build/toolchain/pkg-config.sh)
+
+SET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+SET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+

@@ -1,0 +1,10 @@
+[Unit]
+Description=ubus
+
+[Service]
+ExecStart=/usr/sbin/ubusd -s /var/run/ubus.sock
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
