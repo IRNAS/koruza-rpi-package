@@ -2,6 +2,11 @@
 
 BUILD_DIR=build
 
+rpxc_install()
+{
+  ./bin/rpxc install-raspbian $*
+}
+
 rpxc()
 {
   local cmd="$1"
@@ -33,6 +38,9 @@ fetch_git()
   local target="$2"
   git clone "${repository}" "${BUILD_DIR}/${target}"
 }
+
+echo "Preparing builder image."
+rpxc_install $(cat toolchain/packages-buildtime.txt) $(cat toolchain/packages-runtime.txt)
 
 # Clean build directory.
 echo "Cleaning build directory."
