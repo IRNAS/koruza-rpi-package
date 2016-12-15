@@ -72,5 +72,8 @@ install_file sfp-driver.service lib/systemd/system/sfp-driver.service
 echo "Building package."
 mkdir ${BUILD_DIR}/install-root/DEBIAN
 cp toolchain/control ${BUILD_DIR}/install-root/DEBIAN/control
+cp toolchain/post-install.sh ${BUILD_DIR}/install-root/DEBIAN/postinst
+cp toolchain/pre-remove.sh ${BUILD_DIR}/install-root/DEBIAN/prerm
+cp toolchain/post-remove.sh ${BUILD_DIR}/install-root/DEBIAN/postrm
 dpkg-deb --build ${BUILD_DIR}/install-root koruza_1.0-1.deb
 
