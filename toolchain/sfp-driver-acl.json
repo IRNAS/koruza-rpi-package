@@ -1,0 +1,13 @@
+{
+        "unauthenticated": {
+                "description": "Functions allowed for unauthenticated requests",
+                "read": {
+                        "ubus": {
+                                "sfp": [
+                                        "get_modules",
+                                        "get_diagnostics"
+                                ]
+                        }
+                }
+        }
+}

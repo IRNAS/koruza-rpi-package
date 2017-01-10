@@ -1,0 +1,13 @@
+{
+        "unauthenticated": {
+                "description": "Functions allowed for unauthenticated requests",
+                "read": {
+                        "ubus": {
+                                "session": [
+                                        "access",
+                                        "login"
+                                ]
+                        }
+                }
+        }
+}

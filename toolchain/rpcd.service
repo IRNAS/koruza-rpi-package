@@ -1,8 +1,9 @@
 [Unit]
-Description=ubus
+Description=rpcd
+After=ubus.service
 
 [Service]
-ExecStart=/usr/sbin/ubusd -s /var/run/ubus.sock
+ExecStart=/usr/sbin/rpcd
 Restart=on-failure
 
 [Install]

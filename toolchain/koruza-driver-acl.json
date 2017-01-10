@@ -1,0 +1,26 @@
+{
+        "unauthenticated": {
+                "description": "Functions allowed for unauthenticated requests",
+                "read": {
+                        "ubus": {
+                                "koruza": [
+                                        "get_status"
+                                ]
+                        }
+                }
+        },
+        "admin": {
+                "description": "Functions allowed for administrators",
+                "write": {
+                        "ubus": {
+                                "koruza": [
+                                        "move_motor",
+                                        "homing",
+                                        "reboot",
+                                        "set_webcam_calibration",
+                                        "set_distance"
+                                ]
+                        }
+                }
+        }
+}
