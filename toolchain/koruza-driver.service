@@ -1,0 +1,10 @@
+[Unit]
+Description=koruza-driver
+After=ubus.service sfp-driver.service
+
+[Service]
+ExecStart=/usr/bin/koruza-driver
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

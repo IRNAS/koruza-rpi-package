@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 BUILD_DIR=build
 
 rpxc_install()
@@ -67,6 +69,8 @@ cmake_build sfp-driver
 echo "Copying configuration files."
 install_file ubus.service lib/systemd/system/ubus.service
 install_file sfp-driver.service lib/systemd/system/sfp-driver.service
+install_file koruza-driver.service lib/systemd/system/koruza-driver.service
+install_file koruza.config etc/config/koruza
 
 # Inject dpkg metadata.
 echo "Building package."
