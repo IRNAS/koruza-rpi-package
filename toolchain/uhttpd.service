@@ -3,7 +3,7 @@ Description=uhttpd
 After=ubus.service rpcd.service
 
 [Service]
-ExecStart=/usr/bin/uhttpd -f -h /srv/www -p 8000 -u /ubus -X -D
+ExecStart=/usr/bin/uhttpd -f -h /srv/www -p 80 -u /ubus -X -D
 Restart=on-failure
 
 [Install]

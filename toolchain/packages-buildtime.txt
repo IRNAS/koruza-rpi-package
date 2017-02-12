@@ -1,1 +1,4 @@
+pkg-config
 libjson-c-dev
+libjpeg-dev
+libraspberrypi-dev

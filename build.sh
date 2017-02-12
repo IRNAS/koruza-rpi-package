@@ -7,7 +7,7 @@ INSTALL_ROOT=${BUILD_DIR}/install-root
 
 rpxc_install()
 {
-  ./bin/rpxc install-raspbian $*
+  ./bin/rpxc install-raspbian --update $*
 }
 
 rpxc()
@@ -24,7 +24,7 @@ cmake_build()
   echo "Building '${directory}'."
   rm -rf ${BUILD_DIR}/${directory}/build
   mkdir -p ${BUILD_DIR}/${directory}/build
-  rpxc "cd ${BUILD_DIR}/${directory}/build && cmake -DCMAKE_TOOLCHAIN_FILE=../../../toolchain/toolchain-rpi.cmake -DCMAKE_INSTALL_PREFIX=/build/${BUILD_DIR}/install-root/usr ${config} .. && make && make install"
+  rpxc "sudo ln -s /rpxc/sysroot/opt/vc /opt/vc && cd ${BUILD_DIR}/${directory}/build && cmake -DCMAKE_TOOLCHAIN_FILE=../../../toolchain/toolchain-rpi.cmake -DCMAKE_INSTALL_PREFIX=/build/${BUILD_DIR}/install-root/usr ${config} .. && make && make install"
 }
 
 install_file()
@@ -39,7 +39,14 @@ fetch_git()
 {
   local repository="$1"
   local target="$2"
+  local commit="$3"
+
   git clone "${repository}" "${BUILD_DIR}/${target}"
+  if [ -n "${commit}" ]; then
+    cd "${BUILD_DIR}/${target}"
+    git checkout ${commit}
+    cd -
+  fi
 }
 
 echo "Preparing builder image."
@@ -56,10 +63,11 @@ fetch_git https://git.lede-project.org/project/libubox.git libubox
 fetch_git https://git.lede-project.org/project/ubus.git ubus
 fetch_git https://git.lede-project.org/project/uci.git uci
 fetch_git https://git.lede-project.org/project/rpcd.git rpcd
-fetch_git https://git.lede-project.org/project/uhttpd.git uhttpd
+fetch_git https://git.lede-project.org/project/uhttpd.git uhttpd e6cfc911811b904494776938a480e0b77a14124a
 fetch_git https://github.com/IRNAS/koruza-driver.git koruza-driver
 fetch_git https://github.com/IRNAS/sfp-driver.git sfp-driver
 fetch_git https://github.com/IRNAS/koruza-ui.git koruza-ui
+fetch_git https://github.com/jacksonliam/mjpg-streamer.git mjpg-streamer ac123fbbca16a46bd2d766ca774bf5ba581d9cb6
 
 # Build packages.
 echo "Building packages."
@@ -70,6 +78,7 @@ cmake_build rpcd "-DFILE_SUPPORT=OFF -DIWINFO_SUPPORT=OFF -DRPCSYS_SUPPORT=OFF '
 cmake_build uhttpd "-DLUA_SUPPORT=OFF -DTLS_SUPPORT=OFF '-DCMAKE_C_FLAGS=-idirafter /rpxc/sysroot/usr/include -L/build/build/install-root/usr/lib'"
 cmake_build koruza-driver
 cmake_build sfp-driver
+cmake_build mjpg-streamer/mjpg-streamer-experimental "'-DCMAKE_C_FLAGS=-idirafter /rpxc/sysroot/usr/include -idirafter /rpxc/sysroot/usr/include/arm-linux-gnueabihf -L/build/build/install-root/usr/lib'"
 
 # Install UI.
 echo "Installing UI."
@@ -84,6 +93,7 @@ install_file rpcd.service lib/systemd/system/rpcd.service
 install_file uhttpd.service lib/systemd/system/uhttpd.service
 install_file sfp-driver.service lib/systemd/system/sfp-driver.service
 install_file koruza-driver.service lib/systemd/system/koruza-driver.service
+install_file mjpg-streamer.service lib/systemd/system/mjpg-streamer.service
 install_file unauthenticated-acl.json usr/share/rpcd/acl.d/unauthenticated.json
 install_file koruza-driver-acl.json usr/share/rpcd/acl.d/koruza-driver.json
 install_file sfp-driver-acl.json usr/share/rpcd/acl.d/sfp-driver.json

@@ -1,0 +1,10 @@
+[Unit]
+Description=mjpg-streamer
+
+[Service]
+Environment=LD_LIBRARY_PATH=/usr/lib/mjpg-streamer
+ExecStart=/usr/bin/mjpg_streamer -o "output_http.so -p 8080 -n" -i "input_raspicam.so -x 960 -y 540 -quality 10"
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
