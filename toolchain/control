@@ -3,7 +3,7 @@ Version: 1.0-1
 Section: base
 Priority: optional
 Architecture: armhf
-Depends: libjson-c2 (>= 0.11)
+Depends: libjson-c2 (>= 0.11), avrdude, git
 Maintainer: Jernej Kos <jernej@kos.mx>
 Description: KORUZA
  Control applications for KORUZA.

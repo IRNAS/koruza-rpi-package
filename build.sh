@@ -86,6 +86,13 @@ mkdir -p ${INSTALL_ROOT}/srv/www
 cp -a ${BUILD_DIR}/koruza-ui/dist/* ${INSTALL_ROOT}/srv/www/
 cp ${BUILD_DIR}/koruza-ui/src/favicon.ico ${INSTALL_ROOT}/srv/www/
 
+# Install MCU firmware upgrade scripts.
+echo "Installing MCU upgrade scripts."
+cp toolchain/mcu-reset ${INSTALL_ROOT}/usr/bin/mcu-reset
+cp toolchain/mcu-upgrade-firmware ${INSTALL_ROOT}/usr/bin/mcu-upgrade-firmware
+chmod +x ${INSTALL_ROOT}/usr/bin/mcu-reset
+chmod +x ${INSTALL_ROOT}/usr/bin/mcu-upgrade-firmware
+
 # Copy configuration files.
 echo "Copying configuration files."
 install_file ubus.service lib/systemd/system/ubus.service
