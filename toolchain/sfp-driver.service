@@ -3,6 +3,10 @@ Description=sfp-driver
 After=ubus.service
 
 [Service]
+ExecStartPre=-/usr/bin/gpio -g mode 2 alt5
+ExecStartPre=-/usr/bin/gpio -g mode 3 alt5
+ExecStartPre=-/usr/bin/gpio -g mode 44 alt2
+ExecStartPre=-/usr/bin/gpio -g mode 45 alt2
 ExecStart=/usr/bin/sfp-driver
 Restart=on-failure
 
