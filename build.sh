@@ -97,6 +97,11 @@ cp toolchain/mcu-upgrade-firmware ${INSTALL_ROOT}/usr/bin/mcu-upgrade-firmware
 chmod +x ${INSTALL_ROOT}/usr/bin/mcu-reset
 chmod +x ${INSTALL_ROOT}/usr/bin/mcu-upgrade-firmware
 
+# Install test scripts.
+echo "Installing test scripts."
+cp toolchain/test-homing ${INSTALL_ROOT}/usr/bin/test-homing
+chmod +x ${INSTALL_ROOT}/usr/bin/test-homing
+
 # Copy configuration files.
 echo "Copying configuration files."
 install_file ubus.service lib/systemd/system/ubus.service

@@ -1,0 +1,122 @@
+#!/bin/bash -e
+
+. /usr/share/libubox/jshn.sh
+
+log() {
+  echo "$(date) $*"
+}
+
+get_current_status() {
+  local status="$(ubus call koruza get_status)"
+
+  json_load "${status}"
+  json_get_vars connected
+  json_select motors
+  json_get_vars x y
+}
+
+wait_for_position() {
+  local target_x="$1"
+  local target_y="$2"
+
+  log "Waiting for motors to finish moving to (${target_x}, ${target_y})."
+  local last_x=0
+  local last_y=0
+  local stopped_times=0
+  while ((1)); do
+    get_current_status
+    if [ "${connected}" != "1" ]; then
+      log "WARNING: MCU disconnected while waiting for it to move. Ignored."
+    fi
+
+    if [[ "${x}" == "${target_x}" && "${y}" == "${target_y}" ]]; then
+      break
+    fi
+
+    if [[ "${x}" == "${last_x}" && "${y}" == "${target_y}" ]]; then
+      let stopped_times++
+
+      if (( ${stopped_times} >= 5 )); then
+        log "Motors have not moved for the last 5 seconds, considering the move done."
+        break
+      fi
+    else
+      let stopped_times=0
+    fi
+
+    last_x=x
+    last_y=y
+
+    sleep 1
+  done
+}
+
+homing() {
+  log "Homing."
+
+  while ((1)); do
+    ubus call koruza homing
+    wait_for_position 0 0
+    get_current_status
+    if [[ "${x}" == "0" && "${y}" == "0" ]]; then
+      break
+    fi
+
+    log "WARNING: Homing failed. Retrying."
+  done
+
+  log "Homing completed."
+}
+
+move_to() {
+  local x="$1"
+  local y="$2"
+
+  log "Request move to (${x}, ${y})."
+  ubus call koruza move_motor "{\"x\": ${x}, \"y\": ${y}, \"z\": 0}"
+  wait_for_position ${x} ${y}
+  log "Move completed."
+}
+
+# Must be root.
+if [ "$UID" != "0" ]; then
+  echo "ERROR: Must be root."
+  exit 1
+fi
+
+get_current_status
+if [ "${connected}" != "1" ]; then
+  echo "ERROR: MCU is not connected."
+  exit 1
+fi
+
+# Test sequence.
+while ((1)); do
+  log "Test sequence started."
+  homing
+  move_to 0 0
+
+  for _ in $(seq 1 20); do
+    move_to 100 100
+    move_to 100 -100
+    move_to -100 -100
+    move_to -100 100
+    sleep 5
+  done
+
+  for _ in $(seq 1 10); do
+    move_to 1000 1000
+    move_to -1000 -1000
+    sleep 5
+  done
+
+  for _ in $(seq 1 2); do
+    move_to 10000 10000
+    move_to -10000 -10000
+    sleep 5
+  done
+
+  move_to -50000 -50000
+  get_current_status
+  log "Test run completed. Difference: x=$(( -25000 - ${x} )) y=$(( -25000 - ${y} ))."
+done
