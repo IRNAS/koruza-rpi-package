@@ -1,1 +1,2 @@
 libjson-c2
+libcurl3

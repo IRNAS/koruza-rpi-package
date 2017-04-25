@@ -61,13 +61,15 @@ mkdir ${BUILD_DIR}
 echo "Fetching sources."
 fetch_git https://git.lede-project.org/project/libubox.git libubox
 fetch_git https://git.lede-project.org/project/ubus.git ubus
-fetch_git https://git.lede-project.org/project/uci.git uci
+fetch_git https://git.lede-project.org/project/uci.git uci 49ec6efbdac4819033d34f08927d795f83a3932d
 fetch_git https://git.lede-project.org/project/rpcd.git rpcd
 fetch_git https://git.lede-project.org/project/uhttpd.git uhttpd e6cfc911811b904494776938a480e0b77a14124a
 fetch_git https://github.com/IRNAS/koruza-driver.git koruza-driver
 fetch_git https://github.com/IRNAS/sfp-driver.git sfp-driver
 fetch_git https://github.com/IRNAS/koruza-ui.git koruza-ui
 fetch_git https://github.com/jacksonliam/mjpg-streamer.git mjpg-streamer ac123fbbca16a46bd2d766ca774bf5ba581d9cb6
+fetch_git https://github.com/wlanslovenija/nodewatcher-agent.git nodewatcher-agent
+fetch_git https://github.com/IRNAS/koruza-nodewatcher-agent koruza-nodewatcher-agent
 
 # Build packages.
 echo "Building packages."
@@ -79,6 +81,8 @@ cmake_build uhttpd "-DLUA_SUPPORT=OFF -DTLS_SUPPORT=OFF '-DCMAKE_C_FLAGS=-idiraf
 cmake_build koruza-driver
 cmake_build sfp-driver
 cmake_build mjpg-streamer/mjpg-streamer-experimental "'-DCMAKE_C_FLAGS=-idirafter /rpxc/sysroot/usr/include -idirafter /rpxc/sysroot/usr/include/arm-linux-gnueabihf -L/build/build/install-root/usr/lib'"
+cmake_build nodewatcher-agent "-DWIRELESS_MODULE=OFF -DINTERFACES_MODULE=OFF -DPACKAGES_MODULE=OFF -DCLIENTS_MODULE=OFF -DROUTING_BABEL_MODULE=OFF -DROUTING_OLSR_MODULE=OFF -DKEYS_SSH_MODULE=OFF"
+cmake_build koruza-nodewatcher-agent
 
 # Install UI.
 echo "Installing UI."
