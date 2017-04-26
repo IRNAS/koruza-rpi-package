@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 . /usr/share/libubox/jshn.sh
 
@@ -33,19 +33,20 @@ wait_for_position() {
       break
     fi
 
-    if [[ "${x}" == "${last_x}" && "${y}" == "${target_y}" ]]; then
+    if [[ "${x}" == "${last_x}" && "${y}" == "${last_y}" ]]; then
       let stopped_times++
 
       if (( ${stopped_times} >= 5 )); then
         log "Motors have not moved for the last 5 seconds, considering the move done."
+        log "Current motor position is (${x}, ${y})."
         break
       fi
     else
       let stopped_times=0
     fi
 
-    last_x=x
-    last_y=y
+    let last_x=x
+    let last_y=y
 
     sleep 1
   done
@@ -55,7 +56,7 @@ homing() {
   log "Homing."
 
   while ((1)); do
-    ubus call koruza homing
+    ubus call koruza homing || exit 1
     wait_for_position 0 0
     get_current_status
     if [[ "${x}" == "0" && "${y}" == "0" ]]; then
@@ -73,7 +74,7 @@ move_to() {
   local y="$2"
 
   log "Request move to (${x}, ${y})."
-  ubus call koruza move_motor "{\"x\": ${x}, \"y\": ${y}, \"z\": 0}"
+  ubus call koruza move_motor "{\"x\": ${x}, \"y\": ${y}, \"z\": 0}" || exit 1
   wait_for_position ${x} ${y}
   log "Move completed."
 }
@@ -96,7 +97,9 @@ while ((1)); do
   homing
   move_to 0 0
 
-  for _ in $(seq 1 20); do
+  log "Running first test sequence."
+  for i in $(seq 1 20); do
+    log "Running iteration ${i}."
     move_to 100 100
     move_to 100 -100
     move_to -100 -100
@@ -104,13 +107,17 @@ while ((1)); do
     sleep 5
   done
 
-  for _ in $(seq 1 10); do
+  log "Running second test sequence."
+  for i in $(seq 1 10); do
+    log "Running iteration ${i}."
     move_to 1000 1000
     move_to -1000 -1000
     sleep 5
   done
 
-  for _ in $(seq 1 2); do
+  log "Running final test sequence."
+  for i in $(seq 1 2); do
+    log "Running iteration ${i}."
     move_to 10000 10000
     move_to -10000 -10000
     sleep 5
