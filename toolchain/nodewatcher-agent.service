@@ -1,0 +1,11 @@
+[Unit]
+Description=nodewatcher-agent
+After=ubus.service koruza-driver.service sfp-driver.service
+
+[Service]
+ExecStartPre=/usr/bin/koruza-identify
+ExecStart=/usr/bin/nodewatcher-agent
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

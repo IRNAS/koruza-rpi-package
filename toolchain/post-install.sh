@@ -14,3 +14,4 @@ deb-systemd-invoke start uhttpd.service >/dev/null || true
 deb-systemd-invoke start sfp-driver.service >/dev/null || true
 deb-systemd-invoke start koruza-driver.service >/dev/null || true
 deb-systemd-invoke start mjpg-streamer.service >/dev/null || true
+deb-systemd-invoke start nodewatcher-agent.service >/dev/null || true

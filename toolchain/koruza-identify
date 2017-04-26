@@ -1,0 +1,96 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import json
+import os
+import subprocess
+import sys
+import time
+import uuid
+
+import OpenSSL
+
+if os.getuid() != 0:
+    print("Must be root.")
+    sys.exit(1)
+
+# Namespace for KORUZA UUIDs.
+KORUZA_UUID_NAMESPACE = uuid.UUID('cfb441fc-0629-4226-8806-64592c0ca18c')
+# Template for push URL.
+PUSH_URL_TEMPLATE = subprocess.check_output(['uci', 'get', 'nodewatcher.@agent[0].push_url_template']).strip()
+# Private key and certificate location.
+PATH_PRIVATE_KEY = subprocess.check_output(['uci', 'get', 'nodewatcher.@agent[0].push_client_key']).strip()
+PATH_CERTIFICATE = subprocess.check_output(['uci', 'get', 'nodewatcher.@agent[0].push_client_certificate']).strip()
+
+if not PATH_PRIVATE_KEY or not PATH_CERTIFICATE or not PUSH_URL_TEMPLATE:
+    print("Invalid nodewatcher configuration.")
+    sys.exit(1)
+
+# Wait for the SFP module to appear.
+sfp_serial = None
+print("Waiting for SFP module to appear.")
+while True:
+    try:
+        modules = subprocess.check_output(['ubus', 'call', 'sfp', 'get_modules'])
+        sfp_serial = json.loads(modules).values()[0]['serial_number']
+        break
+    except (OSError, ValueError, IndexError):
+        pass
+
+    time.sleep(1)
+
+print("SFP module serial number:", sfp_serial)
+
+# Generate UUID from the SFP module.
+unit_uuid = uuid.uuid5(KORUZA_UUID_NAMESPACE, str(sfp_serial))
+print("Acquired unit UUID:", unit_uuid)
+
+# Generate certificates if they don't yet exist.
+if not os.path.exists(PATH_CERTIFICATE) or not os.path.exists(PATH_PRIVATE_KEY):
+    print("Generating new node certificate.")
+
+    # Generate private key.
+    private_key = OpenSSL.crypto.PKey()
+    private_key.generate_key(OpenSSL.crypto.TYPE_RSA, 2048)
+
+    # Generate self-signed certificate.
+    certificate = OpenSSL.crypto.X509()
+    certificate.get_subject().C = "SI"
+    certificate.get_subject().ST = "Slovenia"
+    certificate.get_subject().L = "Slovenia"
+    certificate.get_subject().O = "IRNAS"
+    certificate.get_subject().OU = "KORUZA"
+    certificate.get_subject().CN = str(unit_uuid)
+    certificate.set_serial_number(1)
+    certificate.gmtime_adj_notBefore(0)
+    certificate.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)
+    certificate.set_issuer(certificate.get_subject())
+    certificate.set_pubkey(private_key)
+    certificate.sign(private_key, 'sha256')
+
+    # Store certificate file.
+    try:
+        try:
+            os.makedirs(os.path.dirname(PATH_CERTIFICATE))
+        except OSError:
+            pass
+
+        os.umask(0077)
+
+        with open(PATH_CERTIFICATE, 'wt') as certificate_file:
+            certificate_file.write(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, certificate))
+
+        with open(PATH_PRIVATE_KEY, 'wt') as key_file:
+            key_file.write(OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, private_key))
+    except IOError:
+        print("ERROR: Failed to write certificate to '{}'!".format(PATH_CERTIFICATE))
+        sys.exit(1)
+
+# Configure UUID under system.@system[0].uuid.
+subprocess.call(['uci', 'set', 'system.@system[0].uuid={}'.format(unit_uuid)])
+
+# Configure nodewatcher-agent push URL.
+subprocess.call(['uci', 'set', 'nodewatcher.@agent[0].push_url={}'.format(
+    PUSH_URL_TEMPLATE.format(uuid=unit_uuid))])
+
+subprocess.call(['uci', 'commit'])

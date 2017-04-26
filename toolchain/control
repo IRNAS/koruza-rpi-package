@@ -3,7 +3,7 @@ Version: 1.0-1
 Section: base
 Priority: optional
 Architecture: armhf
-Depends: libjson-c2 (>= 0.11), libcurl3 (>= 7.38), avrdude, git, wiringpi
+Depends: libjson-c2 (>= 0.11), libcurl3 (>= 7.38), avrdude, git, wiringpi, python-openssl
 Maintainer: Jernej Kos <jernej@kos.mx>
 Description: KORUZA
  Control applications for KORUZA.

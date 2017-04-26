@@ -69,7 +69,8 @@ fetch_git https://github.com/IRNAS/sfp-driver.git sfp-driver
 fetch_git https://github.com/IRNAS/koruza-ui.git koruza-ui
 fetch_git https://github.com/jacksonliam/mjpg-streamer.git mjpg-streamer ac123fbbca16a46bd2d766ca774bf5ba581d9cb6
 fetch_git https://github.com/wlanslovenija/nodewatcher-agent.git nodewatcher-agent
-fetch_git https://github.com/IRNAS/koruza-nodewatcher-agent koruza-nodewatcher-agent
+fetch_git https://github.com/IRNAS/koruza-nodewatcher-agent.git koruza-nodewatcher-agent
+fetch_git https://github.com/IRNAS/sfp-nodewatcher-agent.git sfp-nodewatcher-agent
 
 # Build packages.
 echo "Building packages."
@@ -83,6 +84,7 @@ cmake_build sfp-driver
 cmake_build mjpg-streamer/mjpg-streamer-experimental "'-DCMAKE_C_FLAGS=-idirafter /rpxc/sysroot/usr/include -idirafter /rpxc/sysroot/usr/include/arm-linux-gnueabihf -L/build/build/install-root/usr/lib'"
 cmake_build nodewatcher-agent "-DWIRELESS_MODULE=OFF -DINTERFACES_MODULE=OFF -DPACKAGES_MODULE=OFF -DCLIENTS_MODULE=OFF -DROUTING_BABEL_MODULE=OFF -DROUTING_OLSR_MODULE=OFF -DKEYS_SSH_MODULE=OFF"
 cmake_build koruza-nodewatcher-agent
+cmake_build sfp-nodewatcher-agent
 
 # Install UI.
 echo "Installing UI."
@@ -102,6 +104,11 @@ echo "Installing test scripts."
 cp toolchain/test-homing ${INSTALL_ROOT}/usr/bin/test-homing
 chmod +x ${INSTALL_ROOT}/usr/bin/test-homing
 
+# Install helper scripts.
+echo "Installing helper scripts."
+cp toolchain/koruza-identify ${INSTALL_ROOT}/usr/bin/koruza-identify
+chmod +x ${INSTALL_ROOT}/usr/bin/koruza-identify
+
 # Copy configuration files.
 echo "Copying configuration files."
 install_file ubus.service lib/systemd/system/ubus.service
@@ -110,9 +117,12 @@ install_file uhttpd.service lib/systemd/system/uhttpd.service
 install_file sfp-driver.service lib/systemd/system/sfp-driver.service
 install_file koruza-driver.service lib/systemd/system/koruza-driver.service
 install_file mjpg-streamer.service lib/systemd/system/mjpg-streamer.service
+install_file nodewatcher-agent.service lib/systemd/system/nodewatcher-agent.service
 install_file unauthenticated-acl.json usr/share/rpcd/acl.d/unauthenticated.json
 install_file koruza-driver-acl.json usr/share/rpcd/acl.d/koruza-driver.json
 install_file sfp-driver-acl.json usr/share/rpcd/acl.d/sfp-driver.json
+install_file system.config etc/config/system
+install_file nodewatcher.config etc/config/nodewatcher
 install_file koruza.config etc/config/koruza
 install_file rpcd.config etc/config/rpcd
 
