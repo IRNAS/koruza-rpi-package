@@ -3,6 +3,12 @@
 . /usr/share/libubox/jshn.sh
 
 log() {
+  if [ "${quiet}" == "0" ]; then
+    echo "$(date) $*"
+  fi
+}
+
+log_always() {
   echo "$(date) $*"
 }
 
@@ -26,7 +32,7 @@ wait_for_position() {
   while ((1)); do
     get_current_status
     if [ "${connected}" != "1" ]; then
-      log "WARNING: MCU disconnected while waiting for it to move. Ignored."
+      log_always "WARNING: MCU disconnected while waiting for it to move. Ignored."
     fi
 
     if [[ "${x}" == "${target_x}" && "${y}" == "${target_y}" ]]; then
@@ -63,7 +69,7 @@ homing() {
       break
     fi
 
-    log "WARNING: Homing failed. Retrying."
+    log_always "WARNING: Homing failed. Retrying."
   done
 
   log "Homing completed."
@@ -89,6 +95,12 @@ get_current_status
 if [ "${connected}" != "1" ]; then
   echo "ERROR: MCU is not connected."
   exit 1
+fi
+
+if [ "$1" == "quiet" ]; then
+  quiet="1"
+else
+  quiet="0"
 fi
 
 # Test sequence.
@@ -125,5 +137,5 @@ while ((1)); do
 
   move_to -50000 -50000
   get_current_status
-  log "Test run completed. Difference: x=$(( -25000 - ${x} )) y=$(( -25000 - ${y} ))."
+  log_always "Test run completed. Difference: x=$(( -25000 - ${x} )) y=$(( -25000 - ${y} ))."
 done
