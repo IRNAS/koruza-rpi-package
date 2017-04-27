@@ -42,8 +42,22 @@ while True:
 print("SFP module serial number:", sfp_serial)
 
 # Generate UUID from the SFP module.
-unit_uuid = uuid.uuid5(KORUZA_UUID_NAMESPACE, str(sfp_serial))
+unit_uuid = str(uuid.uuid5(KORUZA_UUID_NAMESPACE, str(sfp_serial)))
 print("Acquired unit UUID:", unit_uuid)
+
+# Get currently configured UUID.
+try:
+    current_uuid = subprocess.check_output(['uci', 'get', 'system.@system[0].uuid']).strip()
+except subprocess.CalledProcessError:
+    current_uuid = None
+
+if current_uuid != unit_uuid:
+    print("UUID has changed. Erasing certificate and private key.")
+    try:
+        os.unlink(PATH_CERTIFICATE)
+        os.unlink(PATH_PRIVATE_KEY)
+    except OSError:
+        pass
 
 # Generate certificates if they don't yet exist.
 if not os.path.exists(PATH_CERTIFICATE) or not os.path.exists(PATH_PRIVATE_KEY):
@@ -60,7 +74,7 @@ if not os.path.exists(PATH_CERTIFICATE) or not os.path.exists(PATH_PRIVATE_KEY):
     certificate.get_subject().L = "Slovenia"
     certificate.get_subject().O = "IRNAS"
     certificate.get_subject().OU = "KORUZA"
-    certificate.get_subject().CN = str(unit_uuid)
+    certificate.get_subject().CN = unit_uuid
     certificate.set_serial_number(1)
     certificate.gmtime_adj_notBefore(0)
     certificate.gmtime_adj_notAfter(10 * 365 * 24 * 60 * 60)
