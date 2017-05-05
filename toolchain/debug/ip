@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "Content-Type: text/plain"
+echo ""
+
+ip addr sh dev eth0 | grep 'inet ' | awk '{print $2}'

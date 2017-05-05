@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo "Content-Type: text/plain"
+echo ""
+
+echo "[Showing latest 100 log entries.]"
+tac /var/log/koruza-test-homing.log | head -n 100

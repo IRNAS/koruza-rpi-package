@@ -35,6 +35,14 @@ install_file()
   cp toolchain/${file} ${INSTALL_ROOT}/${target}
 }
 
+install_script()
+{
+  local file="$1"
+  local target="$2"
+  install_file "$1" "$2"
+  chmod +x ${INSTALL_ROOT}/${target}
+}
+
 fetch_git()
 {
   local repository="$1"
@@ -91,6 +99,11 @@ echo "Installing UI."
 mkdir -p ${INSTALL_ROOT}/srv/www
 cp -a ${BUILD_DIR}/koruza-ui/dist/* ${INSTALL_ROOT}/srv/www/
 cp ${BUILD_DIR}/koruza-ui/src/favicon.ico ${INSTALL_ROOT}/srv/www/
+
+# Install debug scripts.
+mkdir ${INSTALL_ROOT}/srv/www/info
+install_script debug/ip srv/www/info/ip
+install_script debug/homing srv/www/info/homing
 
 # Install MCU firmware upgrade scripts.
 echo "Installing MCU upgrade scripts."
