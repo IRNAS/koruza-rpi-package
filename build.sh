@@ -146,4 +146,6 @@ cp toolchain/control ${INSTALL_ROOT}/DEBIAN/control
 cp toolchain/post-install.sh ${INSTALL_ROOT}/DEBIAN/postinst
 cp toolchain/pre-remove.sh ${INSTALL_ROOT}/DEBIAN/prerm
 cp toolchain/post-remove.sh ${INSTALL_ROOT}/DEBIAN/postrm
-dpkg-deb --build ${INSTALL_ROOT} koruza_1.0-1.deb
+
+VERSION=$(grep Version toolchain/control | awk '{print $2}')
+dpkg-deb --build ${INSTALL_ROOT} koruza_${VERSION}.deb
