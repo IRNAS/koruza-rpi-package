@@ -13,6 +13,11 @@ the following on the KORUZA compute module:
 sudo dpkg -i koruza_1.0-1.deb
 ```
 
+If you get some missing dependencies, be sure to also run:
+```bash
+sudo apt-get -f install
+```
+
 ## Motor homing tests
 
 In order to run continuous motor homing test every time the compute module
@@ -45,5 +50,5 @@ All our websites and additional documentation are licensed under [Creative Commo
 
 What this means is that you can use hardware, firmware, software and documentation without paying a royalty and knowing that you'll be able to use your version forever. You are also free to make changes but if you share these changes then you have to do so on the same conditions that you enjoy.
 
-Koruza, GoodEnoughCNC and IRNAS are all names and marks of Institut IRNAS Rače. 
+Koruza, GoodEnoughCNC and IRNAS are all names and marks of Institut IRNAS Rače.
 You may use these names and terms only to attribute the appropriate entity as required by the Open Licences referred to above. You may not use them in any other way and in particular you may not use them to imply endorsement or authorization of any hardware that you design, make or sell.
