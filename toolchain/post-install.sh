@@ -15,3 +15,7 @@ deb-systemd-invoke start sfp-driver.service >/dev/null || true
 deb-systemd-invoke start koruza-driver.service >/dev/null || true
 deb-systemd-invoke start mjpg-streamer.service >/dev/null || true
 deb-systemd-invoke start nodewatcher-agent.service >/dev/null || true
+
+# Enable hostapd and udhcpd.
+update-rc.d hostapd enable || true
+update-rc.d udhcpd enable || true

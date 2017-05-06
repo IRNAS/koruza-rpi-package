@@ -14,6 +14,12 @@ if os.getuid() != 0:
     print("Must be root.")
     sys.exit(1)
 
+# Config file locations.
+HOSTAPD_CONFIG = '/etc/hostapd/hostapd.conf'
+HOSTAPD_DEFAULTS_CONFIG = '/etc/default/hostapd'
+UDHCPD_CONFIG = '/etc/udhcpd.conf'
+UDHCPD_DEFAULTS_CONFIG = '/etc/default/udhcpd'
+INTERFACES_CONFIG = '/etc/network/interfaces'
 # Namespace for KORUZA UUIDs.
 KORUZA_UUID_NAMESPACE = uuid.UUID('cfb441fc-0629-4226-8806-64592c0ca18c')
 # Template for push URL.
@@ -108,3 +114,60 @@ subprocess.call(['uci', 'set', 'nodewatcher.@agent[0].push_url={}'.format(
     PUSH_URL_TEMPLATE.format(uuid=unit_uuid))])
 
 subprocess.call(['uci', 'commit'])
+
+# Generate hostapd configuration.
+with open(HOSTAPD_CONFIG, 'w') as hostapd_file:
+    config = [
+        'interface=wlan0',
+        'driver=nl80211',
+        'ssid=KORUZA-{}'.format(sfp_serial),
+        'hw_mode=g',
+        'channel=6',
+        'macaddr_acl=0',
+        'auth_algs=1',
+        'ignore_broadcast_ssid=0',
+        'wpa=2',
+        'wpa_passphrase=koruzakoruza',  # TODO: How should this password be generated?
+        'wpa_key_mgmt=WPA-PSK',
+    ]
+    hostapd_file.write('\n'.join(config + ['']))
+
+with open(HOSTAPD_DEFAULTS_CONFIG, 'w') as hostapd_file:
+    hostapd_file.write('DAEMON_CONF="{}"\n'.format(HOSTAPD_CONFIG))
+
+# Generate udhcpd configuration.
+with open(UDHCPD_CONFIG, 'w') as udhcpd_file:
+    config = [
+        'start 172.22.0.10',
+        'end 172.22.0.254',
+        'interface wlan0',
+        'remaining yes',
+        'opt dns 8.8.8.8 4.2.2.2',
+        'opt subnet 255.255.255.0',
+        'opt router 172.22.0.1',
+        'opt lease 86400',
+    ]
+    udhcpd_file.write('\n'.join(config + ['']))
+
+with open(UDHCPD_DEFAULTS_CONFIG, 'w') as udhcpd_file:
+    udhcpd_file.write('DHCPD_OPTS="-S"\n')
+
+# Generate network interface configuration.
+with open(INTERFACES_CONFIG, 'w') as interfaces_file:
+    config = [
+        'source-directory /etc/network/interfaces.d',
+        '',
+        'auto lo',
+        'iface lo inet loopback',
+        '',
+        'iface eth0 inet manual',
+        '',
+        'allow-hotplug wlan0',
+        'iface wlan0 inet static',
+        '  address 172.22.0.1',
+        '  netmask 255.255.255.0',
+    ]
+    interfaces_file.write('\n'.join(config + ['']))
+
+# Restart reconfigured network services.
+subprocess.call(['systemctl', 'restart', 'udhcpd', 'hostapd'])
