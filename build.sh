@@ -143,6 +143,7 @@ install_file rpcd.config etc/config/rpcd
 echo "Building package."
 mkdir ${INSTALL_ROOT}/DEBIAN
 cp toolchain/control ${INSTALL_ROOT}/DEBIAN/control
+cp toolchain/conffiles ${INSTALL_ROOT}/DEBIAN/conffiles
 cp toolchain/post-install.sh ${INSTALL_ROOT}/DEBIAN/postinst
 cp toolchain/pre-remove.sh ${INSTALL_ROOT}/DEBIAN/prerm
 cp toolchain/post-remove.sh ${INSTALL_ROOT}/DEBIAN/postrm
