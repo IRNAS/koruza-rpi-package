@@ -7,6 +7,7 @@ deb-systemd-helper enable uhttpd.service >/dev/null || true
 deb-systemd-helper enable sfp-driver.service >/dev/null || true
 deb-systemd-helper enable koruza-driver.service >/dev/null || true
 deb-systemd-helper enable mjpg-streamer.service >/dev/null || true
+deb-systemd-helper enable nodewatcher-agent.service >/dev/null || true
 systemctl --system daemon-reload >/dev/null || true
 deb-systemd-invoke start ubus.service >/dev/null || true
 deb-systemd-invoke start rpcd.service >/dev/null || true
