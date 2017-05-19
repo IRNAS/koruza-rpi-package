@@ -18,7 +18,9 @@
                                         "homing",
                                         "reboot",
                                         "set_webcam_calibration",
-                                        "set_distance"
+                                        "set_distance",
+                                        "get_survey",
+                                        "set_leds"
                                 ]
                         }
                 }
