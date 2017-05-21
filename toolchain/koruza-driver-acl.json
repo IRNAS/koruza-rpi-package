@@ -20,6 +20,7 @@
                                         "set_webcam_calibration",
                                         "set_distance",
                                         "get_survey",
+                                        "reset_survey",
                                         "set_leds"
                                 ]
                         }
