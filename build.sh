@@ -104,6 +104,7 @@ cp ${BUILD_DIR}/koruza-ui/src/favicon.ico ${INSTALL_ROOT}/srv/www/
 mkdir ${INSTALL_ROOT}/srv/www/info
 install_script debug/ip srv/www/info/ip
 install_script debug/homing srv/www/info/homing
+install_script debug/encoders srv/www/info/encoders
 
 # Install MCU firmware upgrade scripts.
 echo "Installing MCU upgrade scripts."

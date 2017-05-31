@@ -2,6 +2,8 @@
 
 . /usr/share/libubox/jshn.sh
 
+ENCODER_LOG="/var/log/koruza-test-homing-encoder.log"
+
 log() {
   if [ "${quiet}" == "0" ]; then
     echo "$(date) $*"
@@ -18,7 +20,7 @@ get_current_status() {
   json_load "${status}"
   json_get_vars connected
   json_select motors
-  json_get_vars x y
+  json_get_vars x y encoder_x encoder_y
 }
 
 wait_for_position() {
@@ -102,6 +104,20 @@ if [ "$1" == "quiet" ]; then
 else
   quiet="0"
 fi
+
+# Ensure all subprocesses are killed on exit.
+trap "exit" INT TERM
+trap "kill 0" EXIT
+
+# Start encoder logger in the background.
+{
+  rm -f ${ENCODER_LOG}
+  while ((1)); do
+    get_current_status
+    log "x=${x} y=${y} encoder_x=${encoder_x} encoder_y=${encoder_y}" >> ${ENCODER_LOG}
+    sleep 0.1
+  done
+} &
 
 # Test sequence.
 while ((1)); do
