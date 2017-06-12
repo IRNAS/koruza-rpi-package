@@ -114,7 +114,7 @@ trap "kill 0" EXIT
   rm -f ${ENCODER_LOG}
   while ((1)); do
     get_current_status
-    log "x=${x} y=${y} encoder_x=${encoder_x} encoder_y=${encoder_y}" >> ${ENCODER_LOG}
+    log_always "x=${x} y=${y} encoder_x=${encoder_x} encoder_y=${encoder_y}" >> ${ENCODER_LOG}
     sleep 0.1
   done
 } &
