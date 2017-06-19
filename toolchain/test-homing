@@ -129,7 +129,7 @@ trap "kill 0" EXIT
 
 # Test sequence.
 while ((1)); do
-  log "Test sequence started."
+  log_always "Test sequence started."
   homing
   move_to 0 0
 
