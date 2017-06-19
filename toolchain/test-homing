@@ -93,6 +93,14 @@ if [ "$UID" != "0" ]; then
   exit 1
 fi
 
+# Check if motor test is enabled and exit otherwise.
+enabled=$(uci -q get koruza.@motors[0].test)
+if [ "${enabled}" != "1" ]; then
+  echo "Motor test is not enabled, refusing to start."
+  echo "To enable run: sudo uci set koruza.@motors[0].test=1"
+  exit 0
+fi
+
 get_current_status
 if [ "${connected}" != "1" ]; then
   echo "ERROR: MCU is not connected."

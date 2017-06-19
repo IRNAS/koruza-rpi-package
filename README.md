@@ -21,16 +21,14 @@ sudo apt-get -f install
 ## Motor homing tests
 
 In order to run continuous motor homing test every time the compute module
-is rebooted, add the following to `/etc/rc.local`, just above `exit 0`:
+is rebooted, run the following and reboot the device:
 ```bash
-# Run homing tests.
-{
-  sleep 30
-  while true; do
-    test-homing quiet >> /var/log/koruza-test-homing.log
-    sleep 1
-  done
-} &
+sudo uci set koruza.@motors[0].test=1
+```
+
+To disable the tests later:
+```bash
+sudo uci set koruza.@motors[0].test=0
 ```
 
 

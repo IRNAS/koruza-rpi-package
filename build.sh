@@ -132,6 +132,7 @@ install_file sfp-driver.service lib/systemd/system/sfp-driver.service
 install_file koruza-driver.service lib/systemd/system/koruza-driver.service
 install_file mjpg-streamer.service lib/systemd/system/mjpg-streamer.service
 install_file nodewatcher-agent.service lib/systemd/system/nodewatcher-agent.service
+install_file motor-test.service lib/systemd/system/motor-test.service
 install_file unauthenticated-acl.json usr/share/rpcd/acl.d/unauthenticated.json
 install_file koruza-driver-acl.json usr/share/rpcd/acl.d/koruza-driver.json
 install_file sfp-driver-acl.json usr/share/rpcd/acl.d/sfp-driver.json
