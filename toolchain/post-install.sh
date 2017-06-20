@@ -26,4 +26,4 @@ update-rc.d udhcpd enable || true
 # Reset rc.local in case it contains test-homing directives.
 grep -q test-homing /etc/rc.local && {
   echo '#!/bin/sh -e' > /etc/rc.local
-}
+} || true
