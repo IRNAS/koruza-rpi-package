@@ -5,6 +5,7 @@ After=ubus.service koruza-driver.service sfp-driver.service
 [Service]
 ExecStart=/bin/sh -c '/usr/bin/test-homing quiet >> /var/log/koruza-test-homing.log'
 Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
