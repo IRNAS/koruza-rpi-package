@@ -74,7 +74,7 @@ fetch_git https://git.lede-project.org/project/rpcd.git rpcd
 fetch_git https://git.lede-project.org/project/uhttpd.git uhttpd e6cfc911811b904494776938a480e0b77a14124a
 fetch_git https://github.com/IRNAS/koruza-driver.git koruza-driver
 fetch_git https://github.com/IRNAS/sfp-driver.git sfp-driver
-fetch_git https://github.com/IRNAS/koruza-ui.git koruza-ui
+fetch_git https://github.com/IRNAS/koruza-ui.git koruza-ui 94964f84d49d01b1dccd923869980bb2f0043153
 fetch_git https://github.com/IRNAS/mjpg-streamer.git mjpg-streamer de5e2577c181dce21942eec4af020fce554b1647
 fetch_git https://github.com/wlanslovenija/nodewatcher-agent.git nodewatcher-agent
 fetch_git https://github.com/IRNAS/koruza-nodewatcher-agent.git koruza-nodewatcher-agent
