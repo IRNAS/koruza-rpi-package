@@ -108,20 +108,17 @@ install_script debug/encoders srv/www/info/encoders
 
 # Install MCU firmware upgrade scripts.
 echo "Installing MCU upgrade scripts."
-cp toolchain/mcu-reset ${INSTALL_ROOT}/usr/bin/mcu-reset
-cp toolchain/mcu-upgrade-firmware ${INSTALL_ROOT}/usr/bin/mcu-upgrade-firmware
-chmod +x ${INSTALL_ROOT}/usr/bin/mcu-reset
-chmod +x ${INSTALL_ROOT}/usr/bin/mcu-upgrade-firmware
+install_script mcu-reset usr/bin/mcu-reset
+install_script mcu-upgrade-firmware usr/bin/mcu-upgrade-firmware
 
 # Install test scripts.
 echo "Installing test scripts."
-cp toolchain/test-homing ${INSTALL_ROOT}/usr/bin/test-homing
-chmod +x ${INSTALL_ROOT}/usr/bin/test-homing
+install_script test-homing usr/bin/test-homing
 
 # Install helper scripts.
 echo "Installing helper scripts."
-cp toolchain/koruza-identify ${INSTALL_ROOT}/usr/bin/koruza-identify
-chmod +x ${INSTALL_ROOT}/usr/bin/koruza-identify
+install_script koruza-identify usr/bin/koruza-identify
+install_script webcam-position usr/bin/webcam-position
 
 # Copy configuration files.
 echo "Copying configuration files."

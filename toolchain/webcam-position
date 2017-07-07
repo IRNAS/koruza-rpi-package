@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import os
+import subprocess
+import sys
+
+ZOOM_WIDTH = 0.4
+ZOOM_HEIGHT = 0.4
+ENVIRONMENT_FILE = '/var/run/webcam-position.env'
+
+
+def inverse_transform(x, y, width, height, rx, ry, rw, rh):
+    x *= rw
+    y *= rh
+    return (x + rx * width, y + ry * height)
+
+
+def forward_transform(x, y, width, height, rx, ry, rw, rh):
+    x -= rx * width
+    y -= ry * height
+    return (x / rw, y / rh)
+
+
+def uci_get_float(pointer, default=None):
+    try:
+        return float(subprocess.check_output(['uci', 'get', pointer]).strip())
+    except (ValueError, OSError, subprocess.CalledProcessError):
+        return default
+
+
+def uci_set(pointer, value):
+    if isinstance(value, float):
+        value = round(value, 2)
+    subprocess.call(['uci', 'set', '{}={}'.format(pointer, value)])
+
+
+def write_env(env_file, name, value):
+    if isinstance(value, float):
+        value = round(value, 2)
+    env_file.write('{}={}\n'.format(name, value))
+
+if os.getuid() != 0:
+    print("Must be root.")
+    sys.exit(1)
+
+width = uci_get_float('koruza.@webcam[0].width')
+height = uci_get_float('koruza.@webcam[0].height')
+offset_x = uci_get_float('koruza.@webcam[0].offset_x')
+offset_y = uci_get_float('koruza.@webcam[0].offset_y')
+zoom_x = uci_get_float('koruza.@webcam[0].zoom_x', default=0.4)
+zoom_y = uci_get_float('koruza.@webcam[0].zoom_y', default=0.4)
+zoom_w = uci_get_float('koruza.@webcam[0].zoom_w', default=0.4)
+zoom_h = uci_get_float('koruza.@webcam[0].zoom_h', default=0.4)
+
+# Transform calibration offset to global coordinates.
+g_x, g_y = inverse_transform(offset_x, offset_y, width, height, zoom_x, zoom_y, zoom_w, zoom_h)
+
+# Compute new zoom based on center point.
+zoom_x = max(0, g_x / width - ZOOM_WIDTH / 2.0)
+zoom_y = max(0, g_y / height - ZOOM_HEIGHT / 2.0)
+zoom_w = ZOOM_WIDTH
+zoom_h = ZOOM_HEIGHT
+
+# Transform previous calibration offset to new coordinates.
+offset_x, offset_y = forward_transform(g_x, g_y, width, height, zoom_x, zoom_y, zoom_w, zoom_h)
+
+# Update configuration.
+uci_set('koruza.@webcam[0].offset_x', int(offset_x))
+uci_set('koruza.@webcam[0].offset_y', int(offset_y))
+uci_set('koruza.@webcam[0].zoom_x', zoom_x)
+uci_set('koruza.@webcam[0].zoom_y', zoom_y)
+uci_set('koruza.@webcam[0].zoom_w', zoom_w)
+uci_set('koruza.@webcam[0].zoom_h', zoom_h)
+subprocess.call(['uci', 'commit'])
+
+# Output environment variables to temporary file.
+with open(ENVIRONMENT_FILE, 'w') as env_file:
+    write_env(env_file, 'WIDTH', int(width))
+    write_env(env_file, 'HEIGHT', int(height))
+    write_env(env_file, 'ROI_X', zoom_x)
+    write_env(env_file, 'ROI_Y', zoom_y)
+    write_env(env_file, 'ROI_W', zoom_w)
+    write_env(env_file, 'ROI_H', zoom_h)

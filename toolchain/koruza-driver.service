@@ -1,6 +1,6 @@
 [Unit]
 Description=koruza-driver
-After=ubus.service sfp-driver.service
+After=ubus.service sfp-driver.service mjpg-streamer.service
 
 [Service]
 ExecStart=/usr/bin/koruza-driver
