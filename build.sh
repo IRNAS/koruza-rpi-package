@@ -72,7 +72,7 @@ fetch_git https://git.lede-project.org/project/ubus.git ubus
 fetch_git https://git.lede-project.org/project/uci.git uci 49ec6efbdac4819033d34f08927d795f83a3932d
 fetch_git https://git.lede-project.org/project/rpcd.git rpcd
 fetch_git https://git.lede-project.org/project/uhttpd.git uhttpd e6cfc911811b904494776938a480e0b77a14124a
-fetch_git https://github.com/IRNAS/koruza-driver.git koruza-driver d1d3edd3205cb077100a672b4e602461bef29acc
+fetch_git https://github.com/IRNAS/koruza-driver.git koruza-driver d97c5b9be9c8400890a340cdf58e76cb78d3f104
 fetch_git https://github.com/IRNAS/sfp-driver.git sfp-driver
 fetch_git https://github.com/IRNAS/koruza-ui.git koruza-ui 94964f84d49d01b1dccd923869980bb2f0043153
 fetch_git https://github.com/IRNAS/mjpg-streamer.git mjpg-streamer de5e2577c181dce21942eec4af020fce554b1647

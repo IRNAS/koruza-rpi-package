@@ -31,6 +31,13 @@ To disable the tests later:
 sudo uci set koruza.@motors[0].test=0
 ```
 
+## Configuring a serial number
+
+In order to configure a serial number for the unit (e.g., `0001`) run:
+```bash
+sudo uci set koruza.@unit[0].serial_number=0001
+```
+
 
 ---
 
