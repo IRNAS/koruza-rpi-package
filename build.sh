@@ -72,7 +72,7 @@ fetch_git https://git.lede-project.org/project/ubus.git ubus
 fetch_git https://git.lede-project.org/project/uci.git uci 49ec6efbdac4819033d34f08927d795f83a3932d
 fetch_git https://git.lede-project.org/project/rpcd.git rpcd
 fetch_git https://git.lede-project.org/project/uhttpd.git uhttpd e6cfc911811b904494776938a480e0b77a14124a
-fetch_git https://github.com/IRNAS/koruza-driver.git koruza-driver ee8a3082fa10dbdfb21fce13963628970d08399d
+fetch_git https://github.com/IRNAS/koruza-driver.git koruza-driver 2875672fde30e24843a6ddf95796c7fc5cd2f419
 fetch_git https://github.com/IRNAS/sfp-driver.git sfp-driver
 fetch_git https://github.com/IRNAS/koruza-ui.git koruza-ui 581867d9f772ad808946017afa664601a4ae0f59
 fetch_git https://github.com/IRNAS/mjpg-streamer.git mjpg-streamer de5e2577c181dce21942eec4af020fce554b1647
@@ -106,10 +106,11 @@ install_script debug/ip srv/www/info/ip
 install_script debug/homing srv/www/info/homing
 install_script debug/encoders srv/www/info/encoders
 
-# Install MCU firmware upgrade scripts.
+# Install MCU firmware and package upgrade scripts.
 echo "Installing MCU upgrade scripts."
 install_script mcu-reset usr/bin/mcu-reset
 install_script mcu-upgrade-firmware usr/bin/mcu-upgrade-firmware
+install_script koruza-upgrade usr/bin/koruza-upgrade
 
 # Install test scripts.
 echo "Installing test scripts."

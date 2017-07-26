@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Tag to use.
+TAG="${1:-stable}"
+
+# Must be root.
+if [ "$UID" != "0" ]; then
+  echo "ERROR: Must be root."
+  exit 1
+fi
+
+PACKAGE_DIR="$(mktemp -d)"
+PACKAGE="${PACKAGE_DIR}/koruza.deb"
+
+# Cleanup on exit.
+trap "exit" INT TERM
+trap "rm -rf ${PACKAGE_DIR}" EXIT
+
+# Fetch latest package from GitHub.
+wget -q https://github.com/IRNAS/koruza-rpi-package/releases/download/${TAG}/koruza.deb -O ${PACKAGE} || {
+  echo "ERROR: Failed to download koruza package."
+  exit 1
+}
+
+# Install package.
+sudo dpkg --force-confold -i ${PACKAGE}
