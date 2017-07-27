@@ -3,6 +3,7 @@ Description=koruza-driver
 After=ubus.service sfp-driver.service mjpg-streamer.service
 
 [Service]
+KillMode=process
 ExecStart=/usr/bin/koruza-driver
 Restart=on-failure
 
