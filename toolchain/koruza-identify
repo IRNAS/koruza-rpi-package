@@ -20,6 +20,8 @@ HOSTAPD_DEFAULTS_CONFIG = '/etc/default/hostapd'
 UDHCPD_CONFIG = '/etc/udhcpd.conf'
 UDHCPD_DEFAULTS_CONFIG = '/etc/default/udhcpd'
 INTERFACES_CONFIG = '/etc/network/interfaces'
+HOSTS_CONFIG = '/etc/hosts'
+HOSTNAME_CONFIG = '/etc/hostname'
 # Namespace for KORUZA UUIDs.
 KORUZA_UUID_NAMESPACE = uuid.UUID('cfb441fc-0629-4226-8806-64592c0ca18c')
 # Template for push URL.
@@ -114,6 +116,27 @@ subprocess.call(['uci', 'set', 'nodewatcher.@agent[0].push_url={}'.format(
     PUSH_URL_TEMPLATE.format(uuid=unit_uuid))])
 
 subprocess.call(['uci', 'commit'])
+
+# Configure hostname.
+hostname = 'koruza-{}'.format(sfp_serial)
+current_hostname = open(HOSTNAME_CONFIG).read().strip()
+
+if current_hostname != hostname:
+    with open(HOSTNAME_CONFIG, 'w') as hostname_file:
+        hostname_file.write('{}\n'.format(hostname))
+
+    with open(HOSTS_CONFIG, 'w') as hosts_file:
+        hosts = [
+            '127.0.0.1  localhost',
+            '::1        localhost ip6-localhost ip6-loopback',
+            'ff02::1    ip6-allnodes',
+            'ff02::2    ip6-allrouters',
+            '127.0.1.1  {}'.format(hostname)
+        ]
+
+        hosts_file.write('\n'.join(hosts + ['']))
+
+    subprocess.call(['/etc/init.d/hostname.sh'])
 
 # Generate hostapd configuration.
 with open(HOSTAPD_CONFIG, 'w') as hostapd_file:
