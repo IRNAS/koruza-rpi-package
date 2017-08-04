@@ -39,6 +39,13 @@ sudo uci set koruza.@unit[0].serial_number=0001
 ```
 
 
+## Configuring monitoring push location
+
+In order to configure the URL where the unit should push data (e.g., for `push.kw.koruza.net`), run:
+```bash
+sudo uci set nodewatcher.@agent[0].push_url_template=https://push.kw.koruza.net/push/http/{uuid}
+```
+
 ---
 
 #### License
