@@ -63,7 +63,7 @@ class KoruzaAPI(object):
 
     def login(self, username, password):
         """Authenticate to the remote host.
-        
+
         Authentication is only required for specific requests. Some requests
         may be performed without authentication.
         """
@@ -116,4 +116,3 @@ print('SFP modules:')
 pprint.pprint(sfp_modules)
 print('SFP diagnostics:')
 pprint.pprint(sfp_diagnostics)
-
