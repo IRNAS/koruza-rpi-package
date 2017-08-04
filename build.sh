@@ -73,12 +73,12 @@ fetch_git https://git.lede-project.org/project/uci.git uci 49ec6efbdac4819033d34
 fetch_git https://git.lede-project.org/project/rpcd.git rpcd
 fetch_git https://git.lede-project.org/project/uhttpd.git uhttpd e6cfc911811b904494776938a480e0b77a14124a
 fetch_git https://github.com/IRNAS/koruza-driver.git koruza-driver 253c84696bdc224f53762251899ce72721f13431
-fetch_git https://github.com/IRNAS/sfp-driver.git sfp-driver
+fetch_git https://github.com/IRNAS/sfp-driver.git sfp-driver 4ed293576a672fefb8425c1f971f0f71523e6c1d
 fetch_git https://github.com/IRNAS/koruza-ui.git koruza-ui 968013b96458d87c9fc88e646646895faf4053d7
 fetch_git https://github.com/IRNAS/mjpg-streamer.git mjpg-streamer de5e2577c181dce21942eec4af020fce554b1647
 fetch_git https://github.com/wlanslovenija/nodewatcher-agent.git nodewatcher-agent
 fetch_git https://github.com/IRNAS/koruza-nodewatcher-agent.git koruza-nodewatcher-agent
-fetch_git https://github.com/IRNAS/sfp-nodewatcher-agent.git sfp-nodewatcher-agent
+fetch_git https://github.com/IRNAS/sfp-nodewatcher-agent.git sfp-nodewatcher-agent 898e8c7ec6b9ecd1f9f8449a0b354ccc5d51282b
 
 # Build packages.
 echo "Building packages."
