@@ -24,11 +24,13 @@ In order to run continuous motor homing test every time the compute module
 is rebooted, run the following and reboot the device:
 ```bash
 sudo uci set koruza.@motors[0].test=1
+sudo uci commit koruza
 ```
 
 To disable the tests later:
 ```bash
 sudo uci set koruza.@motors[0].test=0
+sudo uci commit koruza
 ```
 
 ## Configuring a serial number
@@ -38,12 +40,24 @@ In order to configure a serial number for the unit (e.g., `0001`) run:
 sudo uci set koruza.@unit[0].serial_number=0001
 ```
 
+If this command gives you an invalid argument error, run the following:
+```bash
+sudo uci add koruza unit
+sudo uci set koruza.@unit[0].serial_number=0001
+```
+
+Commit the changes by running:
+```
+sudo uci commit koruza
+```
+
 
 ## Configuring monitoring push location
 
 In order to configure the URL where the unit should push data (e.g., for `push.kw.koruza.net`), run:
 ```bash
 sudo uci set nodewatcher.@agent[0].push_url_template=https://push.kw.koruza.net/push/http/{uuid}
+sudo uci commit nodewatcher
 ```
 
 ---
