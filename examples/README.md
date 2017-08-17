@@ -1,7 +1,7 @@
 # KORUZA examples
 
-To run the API example, just specify the hostname as an argument:
+To run the API example, just specify the remote unit's hostname as an argument:
 ```
-python api_example.py <host>
+sudo python api_example.py <remote_host>
 ```
 

@@ -1,9 +1,11 @@
 from __future__ import print_function
 
-import pprint
-import requests
-import sys
+import os
 import json
+import subprocess
+import sys
+
+import requests
 
 
 class KoruzaAPIError(Exception):
@@ -27,6 +29,8 @@ class KoruzaAPI(object):
 
     SESSION_NULL = '00000000000000000000000000000000'
 
+    LOCAL_HOST = 'localhost'
+
     def __init__(self, host, port=80, path='/ubus'):
         """Construct API instance."""
         self.host = host
@@ -39,34 +43,58 @@ class KoruzaAPI(object):
         if parameters is None:
             parameters = {}
 
-        payload = {
-            'jsonrpc': '2.0',
-            'method': 'call',
-            'id': 1,
-            'params': [self._session, object_name, method, parameters],
-        }
-        response = requests.post(
-            'http://{}:{}{}'.format(self.host, self.port, self.path),
-            data=json.dumps(payload),
-            headers={'content-type': 'application/json'}
-        ).json()
+        if self.host == KoruzaAPI.LOCAL_HOST:
+            # Special handling for local commands.
+            try:
+                response = subprocess.check_output([
+                    'ubus',
+                    'call',
+                    object_name,
+                    method,
+                    json.dumps(parameters)
+                ]).strip()
 
-        if 'result' in response:
-            code = response['result'][0]
-            if code == KoruzaAPI.STATUS_OK:
-                return response['result'][1]
-            else:
-                raise KoruzaAPIError(code)
-        elif 'error' in response:
-            print(response)
-            raise KoruzaAPIError(response['error']['code'])
+                if response:
+                    return json.loads(response)
+
+                return {}
+            except subprocess.CalledProcessError, error:
+                raise KoruzaAPIError(error.returncode)
+            except ValueError:
+                raise KoruzaAPIError("Parse error")
+        else:
+            payload = {
+                'jsonrpc': '2.0',
+                'method': 'call',
+                'id': 1,
+                'params': [self._session, object_name, method, parameters],
+            }
+            response = requests.post(
+                'http://{}:{}{}'.format(self.host, self.port, self.path),
+                data=json.dumps(payload),
+                headers={'content-type': 'application/json'},
+                timeout=5,
+            ).json()
+
+            if 'result' in response:
+                code = response['result'][0]
+                if code == KoruzaAPI.STATUS_OK:
+                    return response['result'][1]
+                else:
+                    raise KoruzaAPIError(code)
+            elif 'error' in response:
+                raise KoruzaAPIError(response['error']['code'])
 
     def login(self, username, password):
         """Authenticate to the remote host.
 
         Authentication is only required for specific requests. Some requests
-        may be performed without authentication.
+        may be performed without authentication. Local commands do not require
+        authentication.
         """
+        if self.host == KoruzaAPI.LOCAL_HOST:
+            return
+
         response = self._call('session', 'login', {
             'username': username,
             'password': password,
@@ -76,6 +104,9 @@ class KoruzaAPI(object):
 
     def logout(self):
         """Close session."""
+        if self.host == KoruzaAPI.LOCAL_HOST:
+            return
+
         self._call('session', 'destroy', {'session': self._session})
         self._session = KoruzaAPI.SESSION_NULL
 
@@ -100,19 +131,54 @@ class KoruzaAPI(object):
         """
         return self._call('sfp', 'get_diagnostics')
 
+    def move_motor(self, x, y):
+        """Move motors.
+
+        Authentication is required.
+        """
+        return self._call('koruza', 'move_motor', {'x': x, 'y': y, 'z': 0})
+
 if len(sys.argv) < 2:
-    print('Please specify KORUZA unit host.')
+    print("ERROR: Please specify KORUZA unit host.")
     sys.exit(1)
 
-api = KoruzaAPI(sys.argv[1])
+if os.getuid() != 0:
+    print("ERROR: Must be run as root.")
+    sys.exit(1)
 
-status = api.get_status()
-sfp_modules = api.get_sfp_modules()
-sfp_diagnostics = api.get_sfp_diagnostics()
+local = KoruzaAPI(KoruzaAPI.LOCAL_HOST)
+remote = KoruzaAPI(sys.argv[1])
 
-print('Status:')
-pprint.pprint(status)
-print('SFP modules:')
-pprint.pprint(sfp_modules)
-print('SFP diagnostics:')
-pprint.pprint(sfp_diagnostics)
+# Processing loop.
+print("INFO: Starting processing loop.")
+while True:
+    # Get remote unit's status.
+    try:
+        remote_status = remote.get_status()
+    except requests.exceptions.Timeout:
+        print("WARNING: Timeout while waiting for remote unit.")
+        continue
+    except KoruzaAPIError, error:
+        print("WARNING: API error ({}) while requesting remote status.".format(error))
+        continue
+
+    # Get local unit's status.
+    try:
+        local_status = local.get_status()
+    except KoruzaAPIError, error:
+        print("WARNING: API error ({}) while requesting local status.".format(error))
+        continue
+
+    # TODO: Decide to move or not.
+    move = True
+    print("INFO: Remote SFP RX power (mW):", remote_status['sfp']['rx_power'] / 1000.)
+    print("INFO: Local SFP RX power (mW):", local_status['sfp']['rx_power'] / 1000.)
+
+    # Move local motors.
+    if move:
+        print("INFO: Decided to move motors.")
+
+        try:
+            local.move_motor(100, 100)
+        except KoruzaAPIError, error:
+            print("WARNING: API error ({}) while requesting local move.".format(error))
