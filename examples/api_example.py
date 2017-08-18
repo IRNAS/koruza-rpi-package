@@ -170,7 +170,7 @@ while True:
         continue
 
     # TODO: Decide to move or not.
-    move = True
+    move = False # Do not move by default
     print("INFO: Remote SFP RX power (mW):", remote_status['sfp']['rx_power'] / 1000.)
     print("INFO: Local SFP RX power (mW):", local_status['sfp']['rx_power'] / 1000.)
 
