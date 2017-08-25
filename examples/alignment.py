@@ -138,6 +138,7 @@ class KoruzaAPI(object):
 class Tracking():
 
     N_SCAN_POINTS = 10
+    N_MES = 10
 
     def __init__(self):
         """Initialise all variables"""
@@ -149,6 +150,7 @@ class Tracking():
         self.local_rx_power_dBm = [-40]*N_SCAN_POINTS
         self.remote_rx_power_dBm = [-40]*N_SCAN_POINTS
         self.count = 0
+        self.meas_count = 0
         self.state = 0
 
     def run(self, x, y, rx_local, rx_remote):
@@ -156,34 +158,63 @@ class Tracking():
         # STATE 0: monitoring
         if self.state == 0:
             self.state = 1
+            print("Alignment started!")
 
         # STATE 1: initialise
         elif self.state == 1:
             # save initial position
             self.initial_position_x = x
             self.initial_position_y = y
+            # Record initial readings in state 3
+            self.state = 3
+            print("Initialise.")
+
+            return x, y
 
         # STATE 2: scanning
         elif self.state == 2:
-            # Save new power reading
-            self.local_rx_power_dBm[self.count] = rx_local
-            self.remote_rx_power_dBm[self.count] = rx_remote
+
             # Increase count
             self.count += 1
 
-            # Check if all points have been scanned
+            # Check if all points have been scanned - find max value position
             if self.count == N_SCAN_POINTS:
-                self.state = 3
+                self.state = 4 # Go to re-set state
                 self.count = find_max_value()
+                print("Optimal position found!")
+
             # Define new position
             x_new = self.initial_position_x + self.scan_points_x[self.count]*self.step
             y_new = self.initial_position_y + self.scan_points_y[self.count]*self.step
+            print("Go to (x, y):", x_new, x_new)
 
             return x_new, y_new
 
+        # STATE 3: wait for 10 measurements, calculate average
+        elif self.state == 3:
+            # Add new measurements
+            self.local_rx_power_dBm[self.count] += rx_local
+            self.remote_rx_power_dBm[self.count] += rx_remote
+            print("Reading %d position %d, local: %f remote: %f ", self.meas_count, self.count, rx_local, rx_remote)
+            self.meas_count += 1 # Increment
+
+            # Check if 10 measurements are obtained
+            if self.meas_count == N_MES:
+                self.meas_count = 0 # Reset
+                self.state = 2 # Go to moving state
+                # Calculate average
+                self.local_rx_power_dBm[self.count] = self.local_rx_power_dBm[self.count]/N_MES
+                self.remote_rx_power_dBm[self.count] = self.remote_rx_power_dBm[self.count]/N_MES
+                print("Average reading position %d, local: %f remote: %f ", self.count, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count])
+
+            return x,y
+
+        # STATE 4: re-set
         else:
             self.state = 0
             reset_measurements()
+
+            return x,y
 
     def reset_measurements(self):
         """Reset rx power and point count"""
@@ -191,6 +222,7 @@ class Tracking():
             self.local_rx_power_dBm[i] = -40
             self.remote_rx_power_dBm[i] = -40
         self.count = 0 # Reset points count
+        self.meas_count = 0 # Reset measurements count
 
     def find_max_value(self):
         """Find max scanned signal"""
@@ -228,7 +260,7 @@ if os.getuid() != 0:
 
 local = KoruzaAPI(KoruzaAPI.LOCAL_HOST)
 remote = KoruzaAPI(sys.argv[1])
-
+alignment = Tracking()
 
 
 # Processing loop.
@@ -264,9 +296,13 @@ while True:
     print("INFO: Local SFP RX power (dBm):", local_rx_power_dbm)
     print("INFO: Local motor position (x, y):", local_x, local_y)
 
+    print("Run alignment!")
+    target_x, target_y = alignment.run(local_x, local_y, local_rx_power_dbm, remote_rx_power_dbm)
+
+
     # Decide where to move based on current coordinates.
-    target_x = min(15000, local_x + 100)
-    target_y = min(15000, local_y + 100)
+    # target_x = min(15000, local_x + 100)
+    # target_y = min(15000, local_y + 100)
     target = (target_x, target_y)
 
     # Check if we need to move.
