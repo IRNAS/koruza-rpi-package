@@ -134,7 +134,80 @@ class KoruzaAPI(object):
         """
         return self._call('koruza', 'move_motor', {'x': x, 'y': y, 'z': 0})
 
+# Tracking class
+class Tracking():
 
+    N_SCAN_POINTS = 10
+
+    def __init__(self):
+        """Initialise all variables"""
+        self.step = 100
+        self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0, 0]
+        self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step, 0]
+        self.initial_position_x = 0
+        self.initial_position_y = 0
+        self.local_rx_power_dBm = [-40]*N_SCAN_POINTS
+        self.remote_rx_power_dBm = [-40]*N_SCAN_POINTS
+        self.count = 0
+        self.state = 0
+
+    def run(self, x, y, rx_local, rx_remote):
+
+        # STATE 0: monitoring
+        if self.state == 0:
+            self.state = 1
+
+        # STATE 1: initialise
+        elif self.state == 1:
+            # save initial position
+            self.initial_position_x = x
+            self.initial_position_y = y
+
+        # STATE 2: scanning
+        elif self.state == 2:
+            # Save new power reading
+            self.local_rx_power_dBm[self.count] = rx_local
+            self.remote_rx_power_dBm[self.count] = rx_remote
+            # Increase count
+            self.count += 1
+
+            # Check if all points have been scanned
+            if self.count == N_SCAN_POINTS:
+                self.state = 3
+                self.count = find_max_value()
+            # Define new position
+            x_new = self.initial_position_x + self.scan_points_x[self.count]*self.step
+            y_new = self.initial_position_y + self.scan_points_y[self.count]*self.step
+
+            return x_new, y_new
+
+        else:
+            self.state = 0
+            reset_measurements()
+
+    def reset_measurements(self):
+        """Reset rx power and point count"""
+        for i in range(N_SCAN_POINTS):
+            self.local_rx_power_dBm[i] = -40
+            self.remote_rx_power_dBm[i] = -40
+        self.count = 0 # Reset points count
+
+    def find_max_value(self):
+        """Find max scanned signal"""
+        max_rx = -40
+        pos = 0
+        for i in range(N_SCAN_POINTS):
+            new_rx = get_combined_power(self.local_rx_power_dBm[i], self.remote_rx_power_dBm[i])
+            if new_rx > max_rx:
+                max_rx = new_rx
+                pos = i
+        return pos
+
+
+    def get_combined_power(self, rx_local, rx_remote):
+        """Combine signal from local and remote unit based on the distance"""
+        max_rx = rx_local
+        return max_rx
 
 def mw_to_dbm(value):
     """Convert mW value to dBm."""
