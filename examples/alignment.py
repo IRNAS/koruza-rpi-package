@@ -135,7 +135,7 @@ class KoruzaAPI(object):
         return self._call('koruza', 'move_motor', {'x': x, 'y': y, 'z': 0})
 
 # Tracking class
-class Tracking():
+class Tracking(object):
 
     N_SCAN_POINTS = 10
     N_MES = 10
@@ -147,8 +147,8 @@ class Tracking():
         self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step, 0]
         self.initial_position_x = 0
         self.initial_position_y = 0
-        self.local_rx_power_dBm = [-40]*N_SCAN_POINTS
-        self.remote_rx_power_dBm = [-40]*N_SCAN_POINTS
+        self.local_rx_power_dBm = [-40]*Tracking.N_SCAN_POINTS
+        self.remote_rx_power_dBm = [-40]*Tracking.N_SCAN_POINTS
         self.count = 0
         self.meas_count = 0
         self.state = 0
@@ -178,7 +178,7 @@ class Tracking():
             self.count += 1
 
             # Check if all points have been scanned - find max value position
-            if self.count == N_SCAN_POINTS:
+            if self.count == Tracking.N_SCAN_POINTS:
                 self.state = 4 # Go to re-set state
                 self.count = find_max_value()
                 print("Optimal position found!")
@@ -199,12 +199,12 @@ class Tracking():
             self.meas_count += 1 # Increment
 
             # Check if 10 measurements are obtained
-            if self.meas_count == N_MES:
+            if self.meas_count == Tracking.N_MES:
                 self.meas_count = 0 # Reset
                 self.state = 2 # Go to moving state
                 # Calculate average
-                self.local_rx_power_dBm[self.count] = self.local_rx_power_dBm[self.count]/N_MES
-                self.remote_rx_power_dBm[self.count] = self.remote_rx_power_dBm[self.count]/N_MES
+                self.local_rx_power_dBm[self.count] = self.local_rx_power_dBm[self.count]/Tracking.N_MES
+                self.remote_rx_power_dBm[self.count] = self.remote_rx_power_dBm[self.count]/Tracking.N_MES
                 print("Average reading position %d, local: %f remote: %f ", self.count, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count])
 
             return x,y
@@ -218,7 +218,7 @@ class Tracking():
 
     def reset_measurements(self):
         """Reset rx power and point count"""
-        for i in range(N_SCAN_POINTS):
+        for i in range(Tracking.N_SCAN_POINTS):
             self.local_rx_power_dBm[i] = -40
             self.remote_rx_power_dBm[i] = -40
         self.count = 0 # Reset points count
@@ -228,7 +228,7 @@ class Tracking():
         """Find max scanned signal"""
         max_rx = -40
         pos = 0
-        for i in range(N_SCAN_POINTS):
+        for i in range(Tracking.N_SCAN_POINTS):
             new_rx = get_combined_power(self.local_rx_power_dBm[i], self.remote_rx_power_dBm[i])
             if new_rx > max_rx:
                 max_rx = new_rx
