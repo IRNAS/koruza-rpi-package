@@ -159,6 +159,8 @@ class Tracking(object):
         if self.state == 0:
             self.state = 1
             print("Alignment started!")
+            time.sleep(2)
+            return x, y
 
         # STATE 1: initialise
         elif self.state == 1:
@@ -168,7 +170,7 @@ class Tracking(object):
             # Record initial readings in state 3
             self.state = 3
             print("Initialise.")
-
+            time.sleep(2)
             return x, y
 
         # STATE 2: scanning
@@ -176,6 +178,8 @@ class Tracking(object):
 
             # Increase count
             self.count += 1
+            # Go to measurement state
+            self.state = 3
 
             # Check if all points have been scanned - find max value position
             if self.count == Tracking.N_SCAN_POINTS:
@@ -187,6 +191,7 @@ class Tracking(object):
             x_new = self.initial_position_x + self.scan_points_x[self.count]*self.step
             y_new = self.initial_position_y + self.scan_points_y[self.count]*self.step
             print("Go to (x, y):", x_new, x_new)
+            time.sleep(2)
 
             return x_new, y_new
 
@@ -195,7 +200,8 @@ class Tracking(object):
             # Add new measurements
             self.local_rx_power_dBm[self.count] += rx_local
             self.remote_rx_power_dBm[self.count] += rx_remote
-            print("Reading %d position %d, local: %f remote: %f ", self.meas_count, self.count, rx_local, rx_remote)
+            print("Reading %d position %d, local: %f remote: %f " % (self.meas_count, self.count, rx_local, rx_remote))
+            time.sleep(1)
             self.meas_count += 1 # Increment
 
             # Check if 10 measurements are obtained
@@ -205,7 +211,8 @@ class Tracking(object):
                 # Calculate average
                 self.local_rx_power_dBm[self.count] = self.local_rx_power_dBm[self.count]/Tracking.N_MES
                 self.remote_rx_power_dBm[self.count] = self.remote_rx_power_dBm[self.count]/Tracking.N_MES
-                print("Average reading position %d, local: %f remote: %f ", self.count, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count])
+                print("Average reading position %d, local: %f remote: %f " % (self.count, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                time.sleep(2)
 
             return x,y
 
@@ -244,7 +251,10 @@ class Tracking(object):
 def mw_to_dbm(value):
     """Convert mW value to dBm."""
 
-    value_dbm = 10 * math.log10(value)
+    if value > 0:
+        value_dbm = 10 * math.log10(value)
+    else:
+        value_dbm = -40
     if value_dbm < -40:
         value_dbm = -40
 
@@ -265,6 +275,7 @@ alignment = Tracking()
 
 # Processing loop.
 print("INFO: Starting processing loop.")
+time.sleep(2)
 while True:
     # Get remote unit's status.
     try:
@@ -296,9 +307,11 @@ while True:
     print("INFO: Local SFP RX power (dBm):", local_rx_power_dbm)
     print("INFO: Local motor position (x, y):", local_x, local_y)
 
-    print("Run alignment!")
+    print("Run alignment!\n")
+    time.sleep(2)
     target_x, target_y = alignment.run(local_x, local_y, local_rx_power_dbm, remote_rx_power_dbm)
-
+    print("INFO: Return value (x, y):", target_x, target_y)
+    time.sleep(2)
 
     # Decide where to move based on current coordinates.
     # target_x = min(15000, local_x + 100)
