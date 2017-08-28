@@ -147,8 +147,8 @@ class Tracking(object):
         self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step, 0]
         self.initial_position_x = 0
         self.initial_position_y = 0
-        self.local_rx_power_dBm = [-40]*Tracking.N_SCAN_POINTS
-        self.remote_rx_power_dBm = [-40]*Tracking.N_SCAN_POINTS
+        self.local_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS
+        self.remote_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS
         self.count = 0
         self.meas_count = 0
         self.state = 0
@@ -158,7 +158,7 @@ class Tracking(object):
         # STATE 0: monitoring
         if self.state == 0:
             self.state = 1
-            print("Alignment started!")
+            print("ALIGNMENT: Alignment started!")
             time.sleep(2)
             return x, y
 
@@ -169,7 +169,7 @@ class Tracking(object):
             self.initial_position_y = y
             # Record initial readings in state 3
             self.state = 3
-            print("Initialise.")
+            print("ALIGNMENT: Initialise.")
             time.sleep(2)
             return x, y
 
@@ -184,13 +184,13 @@ class Tracking(object):
             # Check if all points have been scanned - find max value position
             if self.count == Tracking.N_SCAN_POINTS:
                 self.state = 4 # Go to re-set state
-                self.count = find_max_value()
-                print("Optimal position found!")
+                self.count = self.find_max_value()
+                print("ALIGNMENT: Optimal position found!")
 
             # Define new position
-            x_new = self.initial_position_x + self.scan_points_x[self.count]*self.step
-            y_new = self.initial_position_y + self.scan_points_y[self.count]*self.step
-            print("Go to (x, y):", x_new, x_new)
+            x_new = self.initial_position_x + self.scan_points_x[self.count]
+            y_new = self.initial_position_y + self.scan_points_y[self.count]
+            print("ALIGNMENT: Go to (x, y):", x_new, y_new)
             time.sleep(2)
 
             return x_new, y_new
@@ -200,8 +200,8 @@ class Tracking(object):
             # Add new measurements
             self.local_rx_power_dBm[self.count] += rx_local
             self.remote_rx_power_dBm[self.count] += rx_remote
-            print("Reading %d position %d, local: %f remote: %f " % (self.meas_count, self.count, rx_local, rx_remote))
-            time.sleep(1)
+            print("ALIGNMENT: Reading %d position %d, local: %f remote: %f " % (self.meas_count, self.count, rx_local, rx_remote))
+            time.sleep(0.1)
             self.meas_count += 1 # Increment
 
             # Check if 10 measurements are obtained
@@ -211,7 +211,7 @@ class Tracking(object):
                 # Calculate average
                 self.local_rx_power_dBm[self.count] = self.local_rx_power_dBm[self.count]/Tracking.N_MES
                 self.remote_rx_power_dBm[self.count] = self.remote_rx_power_dBm[self.count]/Tracking.N_MES
-                print("Average reading position %d, local: %f remote: %f " % (self.count, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                print("ALIGNMENT: Average reading position %d, local: %f remote: %f " % (self.count, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
                 time.sleep(2)
 
             return x,y
@@ -219,15 +219,15 @@ class Tracking(object):
         # STATE 4: re-set
         else:
             self.state = 0
-            reset_measurements()
+            self.reset_measurements()
 
             return x,y
 
     def reset_measurements(self):
         """Reset rx power and point count"""
         for i in range(Tracking.N_SCAN_POINTS):
-            self.local_rx_power_dBm[i] = -40
-            self.remote_rx_power_dBm[i] = -40
+            self.local_rx_power_dBm[i] = 0
+            self.remote_rx_power_dBm[i] = 0
         self.count = 0 # Reset points count
         self.meas_count = 0 # Reset measurements count
 
@@ -236,7 +236,7 @@ class Tracking(object):
         max_rx = -40
         pos = 0
         for i in range(Tracking.N_SCAN_POINTS):
-            new_rx = get_combined_power(self.local_rx_power_dBm[i], self.remote_rx_power_dBm[i])
+            new_rx = self.get_combined_power(self.local_rx_power_dBm[i], self.remote_rx_power_dBm[i])
             if new_rx > max_rx:
                 max_rx = new_rx
                 pos = i
@@ -302,29 +302,29 @@ while True:
     local_x, local_y = local_motors['x'], local_motors['y']
     distance = local_status['camera_calibration']['distance']
 
-    print("INFO: Distance:", distance)
-    print("INFO: Remote SFP RX power (dBm):", remote_rx_power_dbm)
-    print("INFO: Local SFP RX power (dBm):", local_rx_power_dbm)
+    # print("INFO: Distance:", distance)
+    # print("INFO: Remote SFP RX power (dBm):", remote_rx_power_dbm)
+    # print("INFO: Local SFP RX power (dBm):", local_rx_power_dbm)
     print("INFO: Local motor position (x, y):", local_x, local_y)
 
-    print("Run alignment!\n")
-    time.sleep(2)
     target_x, target_y = alignment.run(local_x, local_y, local_rx_power_dbm, remote_rx_power_dbm)
-    print("INFO: Return value (x, y):", target_x, target_y)
-    time.sleep(2)
+    print("ALIGNMENT: Return value (x, y):", target_x, target_y)
 
     # Decide where to move based on current coordinates.
     # target_x = min(15000, local_x + 100)
     # target_y = min(15000, local_y + 100)
     target = (target_x, target_y)
+    print("TARGET: Return value (x, y):", target_x, target_y)
 
     # Check if we need to move.
     current = (local_x, local_y)
     if current == target:
+        print("\n")
         continue
 
     # Move local motors.
-    print("INFO: Moving motors to ({}, {}).".format(*target))
+    print("INFO: Moving motors to ({}, {}).\n".format(*target))
+    time.sleep(2)
 
     while True:
         try:
