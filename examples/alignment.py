@@ -216,8 +216,28 @@ class Tracking(object):
 
             return x,y
 
-        # STATE 4: re-set
+        # STATE 4: check stopping conditions
+        if self.state == 4:
+            # go to idle or continue alignment
+            print("Check stopping conditions!")
+            if self.state == 4:
+                self. state = 6 # Go to reset state and ctn
+            else:
+                self.state = 5 # Go to idle
+
+            return x,y
+
+        # STATE 5: Idle
+        if self.state == 5:
+            print("Idle state.")
+            # Check re-starting conditions
+            self.state = 6 #Re-start algorithm
+
+            return x,y
+
+        # STATE 6: re-set
         else:
+            print("Re-set.")
             self.state = 0
             self.reset_measurements()
 
@@ -245,7 +265,7 @@ class Tracking(object):
 
     def get_combined_power(self, rx_local, rx_remote):
         """Combine signal from local and remote unit based on the distance"""
-        max_rx = rx_local
+        max_rx = rx_remote
         return max_rx
 
 def mw_to_dbm(value):
