@@ -176,7 +176,10 @@ class Tracking(object):
                 self.step = 300
             else:
                 self.step = 100
-                
+
+            # Re-set step size
+            self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0] # Steps circle scan
+            self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step]
             # Record initial readings in state 3
             self.state = 3
             # print("ALIGNMENT: Initialise.")
