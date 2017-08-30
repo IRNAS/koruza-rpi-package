@@ -352,6 +352,7 @@ alignment = Tracking()
 
 # Open log file
 logging.basicConfig(filename='alignment.log',level=logging.DEBUG)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
 # Processing loop.
