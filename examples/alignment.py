@@ -385,7 +385,7 @@ while True:
             last_coordinates = current
 
             # Check for stuck motors (coordinates didn't change in the last 5s).
-            if last_coordinates_same is not None and time.time() - last_coordinates_same > 5000:
+            if last_coordinates_same is not None and time.time() - last_coordinates_same > 30:
                 print("WARNING: Motors stuck when trying to reach target coordinates.")
                 break
         except KoruzaAPIError, error:
