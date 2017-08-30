@@ -137,20 +137,22 @@ class KoruzaAPI(object):
 # Tracking class
 class Tracking(object):
 
-    N_SCAN_POINTS = 10
+    N_SCAN_POINTS = 9
     N_MES = 10
+    N_STOP = 3 # Number of consecitive times maximum is found at the center
 
     def __init__(self):
         """Initialise all variables"""
         self.step = 100
-        self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0, 0]
-        self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step, 0]
+        self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0]
+        self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step]
         self.initial_position_x = 0
         self.initial_position_y = 0
         self.local_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS
         self.remote_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS
         self.count = 0
         self.meas_count = 0
+        self.stop_count = 0 # Number of consecitive times maximum is found at the center
         self.state = 0
 
     def run(self, x, y, rx_local, rx_remote):
@@ -158,7 +160,7 @@ class Tracking(object):
         # STATE 0: monitoring
         if self.state == 0:
             self.state = 1
-            print("ALIGNMENT: Alignment started!")
+            print("ALIGNMENT: Alignment started!\n")
             time.sleep(2)
             return x, y
 
@@ -169,7 +171,7 @@ class Tracking(object):
             self.initial_position_y = y
             # Record initial readings in state 3
             self.state = 3
-            print("ALIGNMENT: Initialise.")
+            # print("ALIGNMENT: Initialise.")
             time.sleep(2)
             return x, y
 
@@ -185,7 +187,7 @@ class Tracking(object):
             if self.count == Tracking.N_SCAN_POINTS:
                 self.state = 4 # Go to re-set state
                 self.count = self.find_max_value()
-                print("ALIGNMENT: Optimal position found!")
+                print("\n ALIGNMENT: Optimal position found at %d! \n" % self.count)
 
             # Define new position
             x_new = self.initial_position_x + self.scan_points_x[self.count]
@@ -200,7 +202,7 @@ class Tracking(object):
             # Add new measurements
             self.local_rx_power_dBm[self.count] += rx_local
             self.remote_rx_power_dBm[self.count] += rx_remote
-            print("ALIGNMENT: Reading %d position %d, local: %f remote: %f " % (self.meas_count, self.count, rx_local, rx_remote))
+            # print("ALIGNMENT: Reading %d position %d, local: %f remote: %f " % (self.meas_count, self.count, rx_local, rx_remote))
             time.sleep(0.1)
             self.meas_count += 1 # Increment
 
@@ -211,7 +213,7 @@ class Tracking(object):
                 # Calculate average
                 self.local_rx_power_dBm[self.count] = self.local_rx_power_dBm[self.count]/Tracking.N_MES
                 self.remote_rx_power_dBm[self.count] = self.remote_rx_power_dBm[self.count]/Tracking.N_MES
-                print("ALIGNMENT: Average reading position %d, local: %f remote: %f " % (self.count, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                print("%f %f %f %f " % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
                 time.sleep(2)
 
             return x,y
@@ -220,24 +222,34 @@ class Tracking(object):
         if self.state == 4:
             # go to idle or continue alignment
             print("Check stopping conditions!")
-            if self.state == 4:
-                self. state = 6 # Go to reset state and ctn
+
+            # Check stopping condition
+            if self.count == 0:
+                self.stop_count += 1 # Max found at the starting point
             else:
+                self.stop_count = 0 # Re-set stop condition
+
+            # Check if stopping condition was reached
+            if self.stop_count == Tracking.N_STOP:
                 self.state = 5 # Go to idle
+                self.stop_count = 0
+            else:
+                self.state = 6 # Re-set and continue
 
             return x,y
 
         # STATE 5: Idle
         if self.state == 5:
             print("Idle state.")
-            # Check re-starting conditions
-            self.state = 6 #Re-start algorithm
 
+            # Check re-starting conditions
+            # self.state = 6 #Re-start algorithm
+            time.sleep(10)
             return x,y
 
         # STATE 6: re-set
         else:
-            print("Re-set.")
+            # print("Re-set.")
             self.state = 0
             self.reset_measurements()
 
@@ -325,25 +337,25 @@ while True:
     # print("INFO: Distance:", distance)
     # print("INFO: Remote SFP RX power (dBm):", remote_rx_power_dbm)
     # print("INFO: Local SFP RX power (dBm):", local_rx_power_dbm)
-    print("INFO: Local motor position (x, y):", local_x, local_y)
+    # print("INFO: Local motor position (x, y):", local_x, local_y)
 
     target_x, target_y = alignment.run(local_x, local_y, local_rx_power_dbm, remote_rx_power_dbm)
-    print("ALIGNMENT: Return value (x, y):", target_x, target_y)
+    # print("ALIGNMENT: Return value (x, y):", target_x, target_y)
 
     # Decide where to move based on current coordinates.
     # target_x = min(15000, local_x + 100)
     # target_y = min(15000, local_y + 100)
     target = (target_x, target_y)
-    print("TARGET: Return value (x, y):", target_x, target_y)
+    # print("TARGET: Return value (x, y):", target_x, target_y)
 
     # Check if we need to move.
     current = (local_x, local_y)
     if current == target:
-        print("\n")
+        # print("\n")
         continue
 
     # Move local motors.
-    print("INFO: Moving motors to ({}, {}).\n".format(*target))
+    # print("INFO: Moving motors to ({}, {}).\n".format(*target))
     time.sleep(2)
 
     while True:
@@ -362,7 +374,7 @@ while True:
             current = (current_motors['x'], current_motors['y'])
 
             if current == target:
-                print("INFO: Target coordinates reached.")
+                # print("INFO: Target coordinates reached.")
                 break
 
             if last_coordinates != current:
