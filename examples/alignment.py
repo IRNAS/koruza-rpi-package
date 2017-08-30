@@ -140,6 +140,8 @@ class Tracking(object):
     N_SCAN_POINTS = 9
     N_MES = 10
     N_STOP = 3 # Number of consecitive times maximum is found at the center
+    N_IDLE = 100 # Number of averaged mesurments in idle state
+    TIMEOUT = 2000 # Timeout for single alignment session
 
     def __init__(self):
         """Initialise all variables"""
@@ -156,14 +158,22 @@ class Tracking(object):
         self.meas_count = 0 # Measurement count
         self.stop_count = 0 # Number of consecitive times maximum is found at the center
         self.state = 0 # States
+        self.average = -40 # Average for idle state
+        self.new_average = 0 # new average for idle state
+        self.start_time = time.time()
 
     def run(self, x, y, rx_local, rx_remote):
 
         # STATE 0: monitoring
         if self.state == 0:
-            self.state = 1
-            print("ALIGNMENT: Alignment started!\n")
-            time.sleep(2)
+            # Check for timeout
+            if time.time() - self.start_time > Tracking.TIMEOUT:
+                self.state = 5 #Go to idle state
+                print("TIMEOUT!\n")
+            else:
+                self.state = 1
+                print("ALIGNMENT: Alignment started!\n")
+
             return x, y
 
         # STATE 1: initialise
@@ -172,7 +182,7 @@ class Tracking(object):
             self.initial_position_x = x
             self.initial_position_y = y
             # Determine step size
-            if rx_remote < -25:
+            if rx_remote < -20:
                 self.step = 300
             else:
                 self.step = 100
@@ -204,7 +214,7 @@ class Tracking(object):
             x_new = self.initial_position_x + self.scan_points_x[self.count]
             y_new = self.initial_position_y + self.scan_points_y[self.count]
             print("ALIGNMENT: Go to (x, y):", x_new, y_new)
-            time.sleep(2)
+            # time.sleep(2)
 
             return x_new, y_new
 
@@ -222,8 +232,8 @@ class Tracking(object):
                 self.meas_count = 0 # Reset
                 self.state = 2 # Go to moving state
                 # Calculate average
-                self.local_rx_power_dBm[self.count] = self.local_rx_power_dBm[self.count]/Tracking.N_MES
-                self.remote_rx_power_dBm[self.count] = self.remote_rx_power_dBm[self.count]/Tracking.N_MES
+                self.local_rx_power_dBm[self.count] /= Tracking.N_MES
+                self.remote_rx_power_dBm[self.count] /= Tracking.N_MES
                 print("%f %f %f %f " % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
                 time.sleep(2)
 
@@ -251,11 +261,30 @@ class Tracking(object):
 
         # STATE 5: Idle
         if self.state == 5:
-            print("Idle state.")
 
-            # Check re-starting conditions
-            # self.state = 6 #Re-start algorithm
-            time.sleep(10)
+            # Calculate average
+            self.new_average += rx_remote
+            self.meas_count += 1
+
+            # Check if 100
+            if self.meas_count == Tracking.N_IDLE:
+                self.new_average = self.new_average / Tracking.N_IDLE # Calculate average
+                print("Idle state, new remote average: %f" % self.new_average)
+
+                # Start re-aligment
+                if self.new_average < self.average - 3:
+                    self.average = -40
+                    self.state = 6
+                    self.start_time = time.time()
+                # New best average
+                elif self.new_average > self.average:
+                    self.average = self.new_average
+
+                # reset
+                self.new_average = 0
+                self.meas_count = 0
+
+            time.sleep(1)
             return x,y
 
         # STATE 6: re-set
@@ -367,7 +396,7 @@ while True:
 
     # Move local motors.
     # print("INFO: Moving motors to ({}, {}).\n".format(*target))
-    time.sleep(2)
+    # time.sleep(2)
 
     while True:
         try:
