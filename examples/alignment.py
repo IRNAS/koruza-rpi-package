@@ -143,17 +143,19 @@ class Tracking(object):
 
     def __init__(self):
         """Initialise all variables"""
-        self.step = 100
-        self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0]
+        self.step = 100 # Step size
+        self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0] # Steps circle scan
         self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step]
-        self.initial_position_x = 0
+        self.next_step_x = 0 # Steps direction line scan
+        self.next_step_y = 0
+        self.initial_position_x = 0 # Innitial position
         self.initial_position_y = 0
-        self.local_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS
-        self.remote_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS
-        self.count = 0
-        self.meas_count = 0
+        self.local_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS # Local power log
+        self.remote_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS # Remote power log
+        self.count = 0 # Points count
+        self.meas_count = 0 # Measurement count
         self.stop_count = 0 # Number of consecitive times maximum is found at the center
-        self.state = 0
+        self.state = 0 # States
 
     def run(self, x, y, rx_local, rx_remote):
 
@@ -169,6 +171,12 @@ class Tracking(object):
             # save initial position
             self.initial_position_x = x
             self.initial_position_y = y
+            # Determine step size
+            if rx_remote < -25:
+                self.step = 300
+            else:
+                self.step = 100
+                
             # Record initial readings in state 3
             self.state = 3
             # print("ALIGNMENT: Initialise.")
