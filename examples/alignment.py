@@ -7,7 +7,6 @@ import subprocess
 import sys
 import time
 import requests
-import logging
 
 
 class KoruzaAPIError(Exception):
@@ -171,11 +170,11 @@ class Tracking(object):
             if time.time() - self.start_time > Tracking.TIMEOUT:
                 self.state = 5 #Go to idle state
                 print("TIMEOUT!\n")
-                logging.info("TIMEOUT!\n")
+                log.write("TIMEOUT!\n")
             else:
                 self.state = 1
                 print("ALIGNMENT: Alignment started!\n")
-                logging.info("ALIGNMENT: Alignment started!\n")
+                log.write("ALIGNMENT: Alignment started!\n")
 
             return x, y
 
@@ -212,7 +211,7 @@ class Tracking(object):
                 self.state = 4 # Go to re-set state
                 self.count = self.find_max_value()
                 print("\n ALIGNMENT: Optimal position found at %d! \n" % self.count)
-                logging.info("ALIGNMENT: Optimal position found at %d! \n" % self.count)
+                log.write("ALIGNMENT: Optimal position found at %d! \n" % self.count)
 
             # Define new position
             x_new = self.initial_position_x + self.scan_points_x[self.count]
@@ -238,7 +237,7 @@ class Tracking(object):
                 self.local_rx_power_dBm[self.count] /= Tracking.N_MES
                 self.remote_rx_power_dBm[self.count] /= Tracking.N_MES
                 print("%f %f %f %f " % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
-                logging.info("%f %f %f %f \n" % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                log.write("%f %f %f %f \n" % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
                 time.sleep(2)
 
             return x,y
@@ -274,7 +273,7 @@ class Tracking(object):
             if self.meas_count == Tracking.N_IDLE:
                 self.new_average = self.new_average / Tracking.N_IDLE # Calculate average
                 print("Idle state, new remote average: %f" % self.new_average)
-                logging.info("Idle state, new remote average: %f\n" % self.new_average)
+                log.write("Idle state, new remote average: %f\n" % self.new_average)
 
                 # Start re-aligment
                 if self.new_average < self.average - 3:
@@ -351,7 +350,7 @@ remote = KoruzaAPI(sys.argv[1])
 alignment = Tracking()
 
 # Open log file
-logging.basicConfig(filename='alignment.log',level=logging.DEBUG)
+log = open("Log.txt", "w")
 
 
 # Processing loop.
@@ -363,11 +362,11 @@ while True:
         remote_status = remote.get_status()
     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
         print("WARNING: Network error while waiting for remote unit.")
-        logging.warning("WARNING: Network error while waiting for remote unit.")
+        log.write("WARNING: Network error while waiting for remote unit.")
         continue
     except KoruzaAPIError, error:
         print("WARNING: API error ({}) while requesting remote status.".format(error))
-        logging.warning("WARNING: API error ({}) while requesting remote status.".format(error))
+        log.write("WARNING: API error ({}) while requesting remote status.".format(error))
         continue
 
     # Get local unit's status.
@@ -375,7 +374,7 @@ while True:
         local_status = local.get_status()
     except KoruzaAPIError, error:
         print("WARNING: API error ({}) while requesting local status.".format(error))
-        logging.warning("WARNING: API error ({}) while requesting local status.".format(error))
+        log.write("WARNING: API error ({}) while requesting local status.".format(error))
         continue
 
     remote_rx_power_mw = remote_status['sfp']['rx_power'] / 10000.
@@ -416,7 +415,7 @@ while True:
             break
         except KoruzaAPIError, error:
             print("WARNING: API error ({}) while requesting local move.".format(error))
-            logging.warning("WARNING: API error ({}) while requesting local move.".format(error))
+            log.write("WARNING: API error ({}) while requesting local move.".format(error))
 
     last_coordinates = (local_x, local_y)
     last_coordinates_same = None
@@ -440,8 +439,8 @@ while True:
             # Check for stuck motors (coordinates didn't change in the last 5s).
             if last_coordinates_same is not None and time.time() - last_coordinates_same > 30:
                 print("WARNING: Motors stuck when trying to reach target coordinates.")
-                logging.warning("WARNING: Motors stuck when trying to reach target coordinates.")
+                log.write("WARNING: Motors stuck when trying to reach target coordinates.")
                 break
         except KoruzaAPIError, error:
             print("WARNING: API error ({}) while confirming local move.".format(error))
-            logging.warning("WARNING: API error ({}) while confirming local move.".format(error))
+            log.write("WARNING: API error ({}) while confirming local move.".format(error))
