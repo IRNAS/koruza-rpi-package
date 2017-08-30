@@ -167,8 +167,8 @@ while True:
     # Get remote unit's status.
     try:
         remote_status = remote.get_status()
-    except requests.exceptions.Timeout:
-        print("WARNING: Timeout while waiting for remote unit.")
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        print("WARNING: Network error while waiting for remote unit.")
         continue
     except KoruzaAPIError, error:
         print("WARNING: API error ({}) while requesting remote status.".format(error))
