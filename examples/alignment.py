@@ -216,7 +216,7 @@ class Tracking(object):
             # Define new position
             x_new = self.initial_position_x + self.scan_points_x[self.count]
             y_new = self.initial_position_y + self.scan_points_y[self.count]
-            logging.info("ALIGNMENT: Go to (x, y):", x_new, y_new, "\n")
+            logging.info("ALIGNMENT: Go to (%f, %f) \n" %(x_new, y_new))
 
             return x_new, y_new
 
