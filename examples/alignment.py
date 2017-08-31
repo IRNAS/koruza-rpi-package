@@ -396,6 +396,7 @@ while True:
     # Check if we need to move.
     current = (local_x, local_y)
     if current == target:
+        logging.info("INFO: Already at target coordinates.")
         continue
 
     # Move local motors.
@@ -416,7 +417,7 @@ while True:
             current = (current_motors['x'], current_motors['y'])
 
             if current == target:
-                # print("INFO: Target coordinates reached.")
+                logging.info("INFO: Target coordinates reached.\n")
                 break
 
             if last_coordinates != current:
