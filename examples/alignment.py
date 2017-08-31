@@ -195,7 +195,7 @@ class Tracking(object):
             self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step]
             # Record initial readings in state 3
             self.state = 3
-            # print("ALIGNMENT: Initialise.")
+            logging.info("ALIGNMENT: Initialise!\n")
             time.sleep(2)
             return x, y
 
@@ -211,13 +211,12 @@ class Tracking(object):
             if self.count == Tracking.N_SCAN_POINTS:
                 self.state = 4 # Go to re-set state
                 self.count = self.find_max_value()
-                print("\n ALIGNMENT: Optimal position found at %d! \n" % self.count)
                 logging.info("ALIGNMENT: Optimal position found at %d! \n" % self.count)
 
             # Define new position
             x_new = self.initial_position_x + self.scan_points_x[self.count]
             y_new = self.initial_position_y + self.scan_points_y[self.count]
-            print("ALIGNMENT: Go to (x, y):", x_new, y_new)
+            logging.info("ALIGNMENT: Go to (x, y):", x_new, y_new, "\n")
 
             return x_new, y_new
 
@@ -237,8 +236,7 @@ class Tracking(object):
                 # Calculate average
                 self.local_rx_power_dBm[self.count] /= Tracking.N_MES
                 self.remote_rx_power_dBm[self.count] /= Tracking.N_MES
-                print("%f %f %f %f " % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
-                logging.info("%f %f %f %f \n" % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                logging.info("ALIGNMENT: %f %f %f %f \n" % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
                 time.sleep(2)
 
             return x,y
@@ -246,7 +244,7 @@ class Tracking(object):
         # STATE 4: check stopping conditions
         if self.state == 4:
             # go to idle or continue alignment
-            print("Check stopping conditions!")
+            logging.info("Check stopping conditions!\n")
 
             # Check stopping condition
             if self.count == 0:
@@ -273,7 +271,6 @@ class Tracking(object):
             # Check if 100
             if self.meas_count == Tracking.N_IDLE:
                 self.new_average = self.new_average / Tracking.N_IDLE # Calculate average
-                print("Idle state, new remote average: %f" % self.new_average)
                 logging.info("Idle state, new remote average: %f\n" % self.new_average)
 
                 # Start re-aligment
@@ -351,7 +348,7 @@ remote = KoruzaAPI(sys.argv[1])
 alignment = Tracking()
 
 # Open log file
-logging.basicConfig(filename='alignment.log',level=logging.DEBUG)
+logging.basicConfig(filename='alignment.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
@@ -393,24 +390,15 @@ while True:
     # print("INFO: Local motor position (x, y):", local_x, local_y)
 
     target_x, target_y = alignment.run(local_x, local_y, local_rx_power_dbm, remote_rx_power_dbm)
-    # print("ALIGNMENT: Return value (x, y):", target_x, target_y)
 
-    # Decide where to move based on current coordinates.
-    # target_x = min(15000, local_x + 100)
-    # target_y = min(15000, local_y + 100)
     target = (target_x, target_y)
-    # print("TARGET: Return value (x, y):", target_x, target_y)
 
     # Check if we need to move.
     current = (local_x, local_y)
     if current == target:
-        # print("\n")
         continue
 
     # Move local motors.
-    # print("INFO: Moving motors to ({}, {}).\n".format(*target))
-    # time.sleep(2)
-
     while True:
         try:
             local.move_motor(*target)
