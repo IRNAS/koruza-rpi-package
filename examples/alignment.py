@@ -143,30 +143,61 @@ class Tracking(object):
     N_STOP = 3 # Number of consecitive times maximum is found at the center
     N_IDLE = 100 # Number of averaged mesurments in idle state
     TIMEOUT = 2000 # Timeout for single alignment session
+    BACKLASH = 150 # Backlash
 
     def __init__(self):
         """Initialise all variables"""
         self.step = 100 # Step size
+
         self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0] # Steps circle scan
         self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step]
-        self.next_step_x = 0 # Steps direction line scan
-        self.next_step_y = 0
-        self.initial_position_x = 0 # Innitial position
+
+        self.backlash_x = 0 # Movement direction
+        self.backlash_y = 0
+
+        self.initial_position_x = 0 # Innitial position - middle of the square
         self.initial_position_y = 0
+
+        self.new_position_x = 0 # New position
+        self.new_position_y = 0
+
         self.local_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS # Local power log
         self.remote_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS # Remote power log
+        self.average = -40 # Power average for idle state
+        self.new_average = 0 # new power average for idle state
+        # Counters:
         self.count = 0 # Points count
         self.meas_count = 0 # Measurement count
         self.stop_count = 0 # Number of consecitive times maximum is found at the center
-        self.state = 0 # States
-        self.average = -40 # Average for idle state
-        self.new_average = 0 # new average for idle state
+
+        self.state = -1 # States
         self.start_time = time.time()
 
     def run(self, x, y, rx_local, rx_remote):
 
+        # Check if requested position was reached
+        if self.state > 0 and not check_move():
+            logging.info("POSITION NOT REACHED, RE-SEND!\n")
+            return self.new_position_x - self.backlash_x * Tracking.BACKLASH, self.new_position_y - self.backlash_y * Tracking.BACKLASH
+
+        # STATE: -1: Initialise backlash - run one time at the beginning
+        if self.state == -1:
+            logging.info("INITIALISE BACKLASH!\n")
+            # Define new position
+            x_new = x + Tracking.BACKLASH
+            y_new = y + Tracking.BACKLASH
+            # New predicted position
+            self.new_position_x = x_new
+            self.new_position_y = y_new
+            # Initialise movement direction
+            self.backlash_x = 0
+            self.backlash_y = 0
+            self.state = 0
+
+            return x_new, y_new
+
         # STATE 0: monitoring
-        if self.state == 0:
+        elif self.state == 0:
             # Check for timeout
             if time.time() - self.start_time > Tracking.TIMEOUT:
                 self.state = 5 #Go to idle state
@@ -181,9 +212,12 @@ class Tracking(object):
 
         # STATE 1: initialise
         elif self.state == 1:
-            # save initial position
-            self.initial_position_x = x
-            self.initial_position_y = y
+            # save initial position, subtract backlash
+            self.initial_position_x = x + self.backlash_x * Tracking.BACKLASH
+            self.initial_position_y = y + self.backlash_y * Tracking.BACKLASH
+            # Set next position to initial
+            self.new_position_x = self.initial_position_x
+            slef.new_position_y = self.initial_position_y
             # Determine step size
             if rx_remote < -20:
                 self.step = 300
@@ -209,13 +243,37 @@ class Tracking(object):
 
             # Check if all points have been scanned - find max value position
             if self.count == Tracking.N_SCAN_POINTS:
-                self.state = 4 # Go to re-set state
-                self.count = self.find_max_value()
+                self.state = 4 # Check end conditions
+                self.count = self.find_max_value() # Find best position
                 logging.info("ALIGNMENT: Optimal position found at %d! \n" % self.count)
 
             # Define new position
             x_new = self.initial_position_x + self.scan_points_x[self.count]
             y_new = self.initial_position_y + self.scan_points_y[self.count]
+
+            # Determine relative move
+            dx, dy = self.calculate_move(x_new, y_new)
+
+            # Update expected position
+            self.new_position_x = x_new
+            self.new_position_y = y_new
+
+            # Update backlash X
+            if dx < 0:
+                self.backlash_x = 1
+            elif dx > 0:
+                self.backlash_x = 0
+
+            # Update backlash Y
+            if dy < 0:
+                self.backlash_y = 1
+            elif dy > 0:
+                self.backlash_y = 0
+
+            # Define new position
+            x_new = self.initial_position_x + self.scan_points_x[self.count] - self.backlash_x * Tracking.BACKLASH
+            y_new = self.initial_position_y + self.scan_points_y[self.count] - self.backlash_y * Tracking.BACKLASH
+
             logging.info("ALIGNMENT: Go to (%f, %f) \n" %(x_new, y_new))
 
             return x_new, y_new
@@ -242,7 +300,7 @@ class Tracking(object):
             return x,y
 
         # STATE 4: check stopping conditions
-        if self.state == 4:
+        elif self.state == 4:
             # go to idle or continue alignment
             logging.info("Check stopping conditions!\n")
 
@@ -262,7 +320,7 @@ class Tracking(object):
             return x,y
 
         # STATE 5: Idle
-        if self.state == 5:
+        elif self.state == 5:
 
             # Calculate average
             self.new_average += rx_remote
@@ -322,6 +380,18 @@ class Tracking(object):
         """Combine signal from local and remote unit based on the distance"""
         max_rx = rx_remote
         return max_rx
+
+    def calculate_move(selfself, x_new, y_new):
+        dx = x_new - self.new_position_x
+        dy = y_new - self.new_position_y
+
+        return dx, dy
+
+    def check_move(self):
+        if self.new_position_x - self.backlash_x*Tracking.BACKLASH == x and self.new_position_y - self.backlash_y * Tracking.BACKLASH == y:
+            return True
+        else:
+            return False
 
 def mw_to_dbm(value):
     """Convert mW value to dBm."""
@@ -396,7 +466,7 @@ while True:
     # Check if we need to move.
     current = (local_x, local_y)
     if current == target:
-        logging.info("INFO: Already at target coordinates.")
+        # logging.info("INFO: Already at target coordinates.")
         continue
 
     # Move local motors.
