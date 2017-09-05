@@ -176,7 +176,7 @@ class Tracking(object):
     def run(self, x, y, rx_local, rx_remote):
 
         # Check if requested position was reached
-        if self.state > 0 and not check_move():
+        if self.state > 0 and not self.check_move(x,y):
             logging.info("POSITION NOT REACHED, RE-SEND!\n")
             return self.new_position_x - self.backlash_x * Tracking.BACKLASH, self.new_position_y - self.backlash_y * Tracking.BACKLASH
 
@@ -217,7 +217,7 @@ class Tracking(object):
             self.initial_position_y = y + self.backlash_y * Tracking.BACKLASH
             # Set next position to initial
             self.new_position_x = self.initial_position_x
-            slef.new_position_y = self.initial_position_y
+            self.new_position_y = self.initial_position_y
             # Determine step size
             if rx_remote < -20:
                 self.step = 300
@@ -307,6 +307,7 @@ class Tracking(object):
             # Check stopping condition
             if self.count == 0:
                 self.stop_count += 1 # Max found at the starting point
+                logging.info("Stop count: %d\n" %self.stop_count)
             else:
                 self.stop_count = 0 # Re-set stop condition
 
@@ -314,6 +315,7 @@ class Tracking(object):
             if self.stop_count == Tracking.N_STOP:
                 self.state = 5 # Go to idle
                 self.stop_count = 0
+                logging.info("Stopping conditions reached!\n")
             else:
                 self.state = 6 # Re-set and continue
 
@@ -352,7 +354,6 @@ class Tracking(object):
             # print("Re-set.")
             self.state = 0
             self.reset_measurements()
-            self.stop_count = 0
 
             return x,y
 
@@ -381,13 +382,13 @@ class Tracking(object):
         max_rx = rx_remote
         return max_rx
 
-    def calculate_move(selfself, x_new, y_new):
+    def calculate_move(self, x_new, y_new):
         dx = x_new - self.new_position_x
         dy = y_new - self.new_position_y
 
         return dx, dy
 
-    def check_move(self):
+    def check_move(self, x, y):
         if self.new_position_x - self.backlash_x*Tracking.BACKLASH == x and self.new_position_y - self.backlash_y * Tracking.BACKLASH == y:
             return True
         else:
