@@ -170,18 +170,18 @@ class Tracking(object):
         self.meas_count = 0 # Measurement count
         self.stop_count = 0 # Number of consecitive times maximum is found at the center
 
-        self.state = -1 # States
+        self.state = -2 # States
         self.start_time = time.time()
 
-    def run(self, x, y, rx_local, rx_remote):
+    def run(self, x, y, x_remote, y_remote, rx_local, rx_remote):
 
         # Check if requested position was reached
         if self.state > 0 and not self.check_move(x,y):
             logging.info("POSITION NOT REACHED, RE-SEND!\n")
             return self.new_position_x - self.backlash_x * Tracking.BACKLASH, self.new_position_y - self.backlash_y * Tracking.BACKLASH
 
-        # STATE: -1: Initialise backlash - run one time at the beginning
-        if self.state == -1:
+        # STATE: -2: Initialise backlash - run one time at the beginning
+        if self.state == -2:
             logging.info("INITIALISE BACKLASH!\n")
             # Define new position
             x_new = x + Tracking.BACKLASH
@@ -192,23 +192,36 @@ class Tracking(object):
             # Initialise movement direction
             self.backlash_x = 0
             self.backlash_y = 0
-            self.state = 0
+            self.state = -1
 
             return x_new, y_new
+
+        # STATE -1: Check other unit status before attempting alignment
+        elif self.state == -1:
+            if(remote_x % 2 == 0):
+                x_new = x + 1 # Add one step to mark the start
+                self.state = 0 # Start alignment
+            else:
+                logging.info("WAIT FOR OTHER UNIT TO FINISH!\n")
+                x_new = x
+
+            return x_new, y
 
         # STATE 0: monitoring
         elif self.state == 0:
             # Check for timeout
             if time.time() - self.start_time > Tracking.TIMEOUT:
                 self.state = 5 #Go to idle state
+                x_new = x -1 # Mark end of the alignment
                 print("TIMEOUT!\n")
                 logging.info("TIMEOUT!\n")
             else:
                 self.state = 1
                 print("ALIGNMENT: Alignment started!\n")
                 logging.info("ALIGNMENT: Alignment started!\n")
+                x_new = x
 
-            return x, y
+            return x_new, y
 
         # STATE 1: initialise
         elif self.state == 1:
@@ -314,12 +327,14 @@ class Tracking(object):
             # Check if stopping condition was reached
             if self.stop_count == Tracking.N_STOP:
                 self.state = 5 # Go to idle
+                x_new = x - 1 # Mark end of movement
                 self.stop_count = 0
                 logging.info("Stopping conditions reached!\n")
             else:
                 self.state = 6 # Re-set and continue
+                x_new = x
 
-            return x,y
+            return x_new,y
 
         # STATE 5: Idle
         elif self.state == 5:
@@ -336,7 +351,8 @@ class Tracking(object):
                 # Start re-aligment
                 if self.new_average < self.average - 3:
                     self.average = -40
-                    self.state = 6
+                    self.state = -1
+                    self.reset_measurements()
                     self.start_time = time.time()
                 # New best average
                 elif self.new_average > self.average:
@@ -453,6 +469,8 @@ while True:
     local_rx_power_dbm = mw_to_dbm(local_rx_power_mw)
     local_motors = local_status['motors']
     local_x, local_y = local_motors['x'], local_motors['y']
+    remote_motors = remote_status['motors']
+    remote_x, remote_y = remote_motors['x'], remote_motors['y']
     distance = local_status['camera_calibration']['distance']
 
     # print("INFO: Distance:", distance)
@@ -460,7 +478,7 @@ while True:
     # print("INFO: Local SFP RX power (dBm):", local_rx_power_dbm)
     # print("INFO: Local motor position (x, y):", local_x, local_y)
 
-    target_x, target_y = alignment.run(local_x, local_y, local_rx_power_dbm, remote_rx_power_dbm)
+    target_x, target_y = alignment.run(local_x, local_y, remote_x, remote_y, local_rx_power_dbm, remote_rx_power_dbm)
 
     target = (target_x, target_y)
 
