@@ -175,6 +175,9 @@ class Tracking(object):
 
     def run(self, x, y, x_remote, y_remote, rx_local, rx_remote):
 
+        # Print out position
+        logging.info("New position: X: %d Y: %d wantedX: %d wantedY: %d\n" %(x,y, self.new_position_x - self.backlash_x*Tracking.BACKLASH, self.new_position_y - self.backlash_y*Tracking.BACKLASH))
+        
         # Check if requested position was reached
         if self.state > 0 and not self.check_move(x,y):
             logging.info("POSITION NOT REACHED, RE-SEND!\n")
@@ -194,17 +197,25 @@ class Tracking(object):
             self.backlash_y = 0
             self.state = -1
 
+            # Initialise steps
+            if x_new % 2 == 1:
+                x_new += 1
+
             return x_new, y_new
 
         # STATE -1: Check other unit status before attempting alignment
         elif self.state == -1:
+            logging.info("Check status of the other unit!\n")
             if(remote_x % 2 == 0):
+                logging.info("Remote unit is not moving!\n")
                 x_new = x + 1 # Add one step to mark the start
+                self.new_position_x = x_new
                 self.state = 0 # Start alignment
             else:
                 logging.info("WAIT FOR OTHER UNIT TO FINISH!\n")
                 x_new = x
 
+            logging.info("ALIGNMENT: Go to (%f, %f) \n" %(x_new, y))
             return x_new, y
 
         # STATE 0: monitoring
