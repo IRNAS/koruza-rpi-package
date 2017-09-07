@@ -161,6 +161,8 @@ class Tracking(object):
         self.new_position_x = 0 # New position
         self.new_position_y = 0
 
+        self.remote_x = 0 #Remote position for motion controll
+
         self.local_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS # Local power log
         self.remote_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS # Remote power log
         self.average = -40 # Power average for idle state
@@ -177,7 +179,7 @@ class Tracking(object):
 
         # Print out position
         logging.info("New position: X: %d Y: %d wantedX: %d wantedY: %d\n" %(x,y, self.new_position_x - self.backlash_x*Tracking.BACKLASH, self.new_position_y - self.backlash_y*Tracking.BACKLASH))
-        
+
         # Check if requested position was reached
         if self.state > 0 and not self.check_move(x,y):
             logging.info("POSITION NOT REACHED, RE-SEND!\n")
@@ -200,20 +202,29 @@ class Tracking(object):
             # Initialise steps
             if x_new % 2 == 1:
                 x_new += 1
+                self.new_position_x += 1
 
             return x_new, y_new
 
         # STATE -1: Check other unit status before attempting alignment
         elif self.state == -1:
+            x_new = x
             logging.info("Check status of the other unit!\n")
             if(remote_x % 2 == 0):
-                logging.info("Remote unit is not moving!\n")
-                x_new = x + 1 # Add one step to mark the start
-                self.new_position_x = x_new
-                self.state = 0 # Start alignment
+
+                if(self.remote_x == x_remote):
+                    logging.info("Remote unit is not moving!\n")
+                    self.remote_x = 0 # re-set
+                    x_new = x + 1 # Add one step to mark the start
+                    self.new_position_x += 1
+                    self.state = 0 # Start alignment
+                else:
+                    logging.info("Store position!\n")
+                    self.remote_x = x_remote
+                    time.sleep(15)
+
             else:
                 logging.info("WAIT FOR OTHER UNIT TO FINISH!\n")
-                x_new = x
 
             logging.info("ALIGNMENT: Go to (%f, %f) \n" %(x_new, y))
             return x_new, y
@@ -224,6 +235,7 @@ class Tracking(object):
             if time.time() - self.start_time > Tracking.TIMEOUT:
                 self.state = 5 #Go to idle state
                 x_new = x -1 # Mark end of the alignment
+                self.new_position_x -= 1
                 print("TIMEOUT!\n")
                 logging.info("TIMEOUT!\n")
             else:
@@ -339,6 +351,7 @@ class Tracking(object):
             if self.stop_count == Tracking.N_STOP:
                 self.state = 5 # Go to idle
                 x_new = x - 1 # Mark end of movement
+                self.new_position_x -= 1
                 self.stop_count = 0
                 logging.info("Stopping conditions reached!\n")
             else:
