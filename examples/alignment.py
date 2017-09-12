@@ -174,6 +174,7 @@ class Tracking(object):
 
         self.state = -2 # States
         self.start_time = time.time()
+        self.motors_stuck = 0
 
     def run(self, x, y, x_remote, y_remote, rx_local, rx_remote):
 
@@ -183,6 +184,13 @@ class Tracking(object):
         # Check if requested position was reached
         if self.state > 0 and not self.check_move(x,y):
             logging.info("POSITION NOT REACHED, RE-SEND!\n")
+
+            # Check stuck time
+            if self.motors_stuck == 0:
+                self.motors_stuck = time.time()
+            elif time.time() - self.motors_stuck > 200:
+                self.motors_stuck = 0
+                self.state = -2
             return self.new_position_x - self.backlash_x * Tracking.BACKLASH, self.new_position_y - self.backlash_y * Tracking.BACKLASH
 
         # STATE: -2: Initialise backlash - run one time at the beginning
@@ -198,6 +206,11 @@ class Tracking(object):
             self.backlash_x = 0
             self.backlash_y = 0
             self.state = -1
+            self.count = 0
+            self.meas_count = 0
+            self.stop_count = 0
+
+            self.reset_measurements()
 
             # Initialise steps
             if x_new % 2 == 1:
