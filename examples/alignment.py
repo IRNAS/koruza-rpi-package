@@ -477,6 +477,7 @@ logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
 # Processing loop.
+stuck_counter = 0
 print("INFO: Starting processing loop.")
 time.sleep(2)
 while True:
@@ -557,6 +558,20 @@ while True:
             if last_coordinates_same is not None and time.time() - last_coordinates_same > 30:
                 print("WARNING: Motors stuck when trying to reach target coordinates.")
                 logging.warning("WARNING: Motors stuck when trying to reach target coordinates.")
+                logging.warning("DEBUG: --- Current status dump ---")
+                logging.warning(local.get_status())
+                logging.warning("DEBUG: ---------------------------")
+
+                stuck_counter += 1
+                if stuck_counter > 1:
+                    logging.warning("DEBUG: Stuck more than once. Algorithm paused, running debug procedure.")
+                    logging.warning("DEBUG: Trying to move motors to (0, 0).")
+                    local.move_motor(0, 0)
+                    logging.warning("DEBUG: Command sent, waiting 15 seconds before status update.")
+                    time.sleep(15)
+                    logging.warning("DEBUG: --- Current status dump ---")
+                    logging.warning(local.get_status())
+                    logging.warning("DEBUG: ---------------------------")
                 break
         except KoruzaAPIError, error:
             print("WARNING: API error ({}) while confirming local move.".format(error))
