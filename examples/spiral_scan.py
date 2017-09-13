@@ -163,6 +163,7 @@ class Spiral_scan(object):
         # Check if requested position was reached
         if self.state > 0 and self.check_move(x, y):
             logging.info("%d %d %f %f\n" % (self.step[0], self.step[1], rx_local, rx_remote))
+            file.write("%d %d %f %f\n" % (self.step[0], self.step[1], rx_local, rx_remote))
 
         elif self.state > 0 and not self.check_move(x, y):
             logging.info("POSITION NOT REACHED, RE-SEND!\n")
@@ -195,7 +196,6 @@ class Spiral_scan(object):
                 # Check if both lines are scanned
                 if self.coordinate_count == 1:
                     self.circle_count += 1  # Update half-circle count
-                    self.coordinate_count = 0  # Re-set coordinate count
 
                     # Check if scanning is complete - EXIT
                     if self.circle_count == 2 * Spiral_scan.N_CIRCLE:
@@ -221,7 +221,7 @@ class Spiral_scan(object):
             self.step[self.coordinate_count] += self.dir * Spiral_scan.STEP  # Update steps
             # New position
             self.new_position[self.coordinate_count] = self.initial_position[self.coordinate_count] + self.step[
-                self.coordinate_count] - self.backlash[self.coordinate_count] * Tracking.BACKLASH
+                self.coordinate_count] - self.backlash[self.coordinate_count] * Spiral_scan.BACKLASH
 
             return self.new_position[0], self.new_position[1], self.Run
 
@@ -260,8 +260,10 @@ scan = Spiral_scan()
 Run = True
 
 # Open log file
-logging.basicConfig(filename='alignment.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename='scan.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
 logging.getLogger("urllib3").setLevel(logging.WARNING)
+# Open output file
+file = open('scan_output.txt','w')
 
 # Processing loop.
 print("INFO: Starting processing loop.")
@@ -328,6 +330,7 @@ while Run:
 
             if current == target:
                 logging.info("INFO: Target coordinates reached.\n")
+                time.sleep(0.5)
                 break
 
             if last_coordinates != current:
