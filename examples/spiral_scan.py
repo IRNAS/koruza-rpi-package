@@ -345,6 +345,7 @@ while Run:
 
             # Check for stuck motors (coordinates didn't change in the last 5s).
             if last_coordinates_same is not None and time.time() - last_coordinates_same > 30:
+                last_coordinates_same = None
                 print("WARNING: Motors stuck when trying to reach target coordinates.")
                 logging.warning("WARNING: Motors stuck when trying to reach target coordinates.")
 
