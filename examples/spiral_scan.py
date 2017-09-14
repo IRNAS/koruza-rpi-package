@@ -48,6 +48,7 @@ class KoruzaAPI(object):
         if self.host == KoruzaAPI.LOCAL_HOST:
             # Special handling for local commands.
             try:
+                logging.warning("Sending local command: {} {} {}".format(object_name, method, parameters))
                 response = subprocess.check_output([
                     'ubus',
                     'call',
@@ -55,6 +56,7 @@ class KoruzaAPI(object):
                     method,
                     json.dumps(parameters)
                 ]).strip()
+                logging.warning("Command sent: {}...".format(response[:30]))
 
                 if response:
                     return json.loads(response)
@@ -322,6 +324,7 @@ while Run:
 
     last_coordinates = (local_x, local_y)
     last_coordinates_same = None
+    stuck_times = 0
     while True:
         try:
             # Check if target reached.
@@ -344,7 +347,23 @@ while Run:
             if last_coordinates_same is not None and time.time() - last_coordinates_same > 30:
                 print("WARNING: Motors stuck when trying to reach target coordinates.")
                 logging.warning("WARNING: Motors stuck when trying to reach target coordinates.")
-                break
+
+                stuck_times += 1
+                if stuck_times > 10:
+                    logging.warning("Stuck more than 10 times. Aborting current move.")
+                    break
+
+                logging.warning("Resending move command.")
+
+                while True:
+                    try:
+                        local.move_motor(*target)
+                        break
+                    except KoruzaAPIError, error:
+                        print("WARNING: API error ({}) while requesting local move.".format(error))
+                        logging.warning("WARNING: API error ({}) while requesting local move.".format(error))
+
+                continue
         except KoruzaAPIError, error:
             print("WARNING: API error ({}) while confirming local move.".format(error))
             logging.warning("WARNING: API error ({}) while confirming local move.".format(error))
