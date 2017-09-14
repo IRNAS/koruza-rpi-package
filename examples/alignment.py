@@ -48,6 +48,7 @@ class KoruzaAPI(object):
         if self.host == KoruzaAPI.LOCAL_HOST:
             # Special handling for local commands.
             try:
+                logging.warning("Sending local command: {} {} {}".format(object_name, method, parameters))
                 response = subprocess.check_output([
                     'ubus',
                     'call',
@@ -55,6 +56,7 @@ class KoruzaAPI(object):
                     method,
                     json.dumps(parameters)
                 ]).strip()
+                logging.warning("Command sent: {}".format(response))
 
                 if response:
                     return json.loads(response)
@@ -545,6 +547,7 @@ while True:
 
             if current == target:
                 logging.info("INFO: Target coordinates reached.\n")
+                stuck_counter = 0
                 break
 
             if last_coordinates != current:
