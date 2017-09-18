@@ -346,7 +346,9 @@ class Tracking(object):
                 self.local_rx_power_dBm[self.count] /= Tracking.N_MES
                 self.remote_rx_power_dBm[self.count] /= Tracking.N_MES
                 logging.info("ALIGNMENT: %f %f %f %f \n" % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
-                file.write("%f %f %f %f \n" % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                with open('scan_output.txt','a') as f:
+                    f.write("%d %d %f %f \n" %(x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                    f.flush()
                 time.sleep(2)
 
             return x,y
@@ -477,7 +479,6 @@ alignment = Tracking()
 # Open log file
 logging.basicConfig(filename='alignment.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
 logging.getLogger("urllib3").setLevel(logging.WARNING)
-file = open('scan_output.txt','w')
 
 
 # Processing loop.
