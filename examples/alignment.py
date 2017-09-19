@@ -56,7 +56,7 @@ class KoruzaAPI(object):
                     method,
                     json.dumps(parameters)
                 ]).strip()
-                logging.warning("Command sent: {}".format(response))
+                #logging.warning("Command sent: {}".format(response))
 
                 if response:
                     return json.loads(response)
