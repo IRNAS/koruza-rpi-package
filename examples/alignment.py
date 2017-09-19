@@ -149,7 +149,7 @@ class Tracking(object):
 
     def __init__(self):
         """Initialise all variables"""
-        self.step = 100 # Step size
+        self.step = 50 # Step size
 
         self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0] # Steps circle scan
         self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step]
