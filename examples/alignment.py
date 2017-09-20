@@ -48,7 +48,7 @@ class KoruzaAPI(object):
         if self.host == KoruzaAPI.LOCAL_HOST:
             # Special handling for local commands.
             try:
-                logging.warning("Sending local command: {} {} {}".format(object_name, method, parameters))
+                # logging.warning("Sending local command: {} {} {}".format(object_name, method, parameters))
                 response = subprocess.check_output([
                     'ubus',
                     'call',
@@ -181,7 +181,7 @@ class Tracking(object):
     def run(self, x, y, x_remote, y_remote, rx_local, rx_remote):
 
         # Print out position
-        logging.info("New position: X: %d Y: %d wantedX: %d wantedY: %d\n" %(x,y, self.new_position_x - self.backlash_x*Tracking.BACKLASH, self.new_position_y - self.backlash_y*Tracking.BACKLASH))
+        # logging.info("New position: X: %d Y: %d wantedX: %d wantedY: %d\n" %(x,y, self.new_position_x - self.backlash_x*Tracking.BACKLASH, self.new_position_y - self.backlash_y*Tracking.BACKLASH))
 
         # Check if requested position was reached
         if self.state > 0 and not self.check_move(x,y):
@@ -218,30 +218,29 @@ class Tracking(object):
             if x_new % 2 == 1:
                 x_new += 1
                 self.new_position_x += 1
+            logging.info("Go to: %f %f %f %f \n" % (x_new, y_new, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
 
             return x_new, y_new
 
         # STATE -1: Check other unit status before attempting alignment
         elif self.state == -1:
             x_new = x
-            logging.info("Check status of the other unit!\n")
+            # logging.info("Check status of the other unit!\n")
             if(remote_x % 2 == 0):
 
                 if(self.remote_x == x_remote):
-                    logging.info("Remote unit is not moving!\n")
+                    logging.info("Remote unit is not moving, start alignment!\n")
                     self.remote_x = 0 # re-set
                     x_new = x + 1 # Add one step to mark the start
                     self.new_position_x += 1
                     self.state = 0 # Start alignment
                 else:
-                    logging.info("Store position!\n")
+                    # logging.info("Store position!\n")
                     self.remote_x = x_remote
                     time.sleep(15)
 
-            else:
-                logging.info("WAIT FOR OTHER UNIT TO FINISH!\n")
 
-            logging.info("ALIGNMENT: Go to (%f, %f) \n" %(x_new, y))
+            # logging.info("ALIGNMENT: Go to (%f, %f) \n" %(x_new, y))
             return x_new, y
 
         # STATE 0: monitoring
@@ -325,7 +324,7 @@ class Tracking(object):
             x_new = self.initial_position_x + self.scan_points_x[self.count] - self.backlash_x * Tracking.BACKLASH
             y_new = self.initial_position_y + self.scan_points_y[self.count] - self.backlash_y * Tracking.BACKLASH
 
-            logging.info("ALIGNMENT: Go to (%f, %f) \n" %(x_new, y_new))
+            # logging.info("ALIGNMENT: Go to (%f, %f) \n" %(x_new, y_new))
 
             return x_new, y_new
 
@@ -345,9 +344,9 @@ class Tracking(object):
                 # Calculate average
                 self.local_rx_power_dBm[self.count] /= Tracking.N_MES
                 self.remote_rx_power_dBm[self.count] /= Tracking.N_MES
-                logging.info("ALIGNMENT: %f %f %f %f \n" % (x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                logging.info("ALIGNMENT: Step: %d X: %f Y: %f Local: %f Remote: %f \n" % (self.count, self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
                 with open('scan_output.txt','a') as f:
-                    f.write("%d %d %f %f \n" %(x, y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                    f.write("%d %f %f %f %f \n" % (self.count, self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
                     f.flush()
                 time.sleep(2)
 
@@ -549,7 +548,7 @@ while True:
             current = (current_motors['x'], current_motors['y'])
 
             if current == target:
-                logging.info("INFO: Target coordinates reached.\n")
+                # logging.info("INFO: Target coordinates reached.\n")
                 stuck_counter = 0
                 break
 
