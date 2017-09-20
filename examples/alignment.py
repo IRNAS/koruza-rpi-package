@@ -186,6 +186,7 @@ class Tracking(object):
         # Check if requested position was reached
         if self.state > 0 and not self.check_move(x,y):
             logging.info("POSITION NOT REACHED, RE-SEND!\n")
+            self.new_position_x += 2 # Try changing position
 
             # Check stuck time
             if self.motors_stuck == 0:
