@@ -268,11 +268,6 @@ class Tracking(object):
             # Set next position to initial
             self.new_position_x = self.initial_position_x
             self.new_position_y = self.initial_position_y
-            # Determine step size
-            if rx_remote < -20:
-                self.step = 300
-            else:
-                self.step = 100
 
             # Re-set step size
             self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0] # Steps circle scan
