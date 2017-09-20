@@ -145,7 +145,7 @@ class Tracking(object):
     N_STOP = 3 # Number of consecitive times maximum is found at the center
     N_IDLE = 100 # Number of averaged mesurments in idle state
     TIMEOUT = 2000 # Timeout for single alignment session
-    BACKLASH = 150 # Backlash
+    BACKLASH = 130 # Backlash
 
     def __init__(self):
         """Initialise all variables"""
