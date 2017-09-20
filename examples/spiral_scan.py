@@ -48,7 +48,7 @@ class KoruzaAPI(object):
         if self.host == KoruzaAPI.LOCAL_HOST:
             # Special handling for local commands.
             try:
-                logging.warning("Sending local command: {} {} {}".format(object_name, method, parameters))
+                # logging.warning("Sending local command: {} {} {}".format(object_name, method, parameters))
                 response = subprocess.check_output([
                     'ubus',
                     'call',
@@ -56,7 +56,7 @@ class KoruzaAPI(object):
                     method,
                     json.dumps(parameters)
                 ]).strip()
-                logging.warning("Command sent: {}...".format(response[:30]))
+                # logging.warning("Command sent: {}...".format(response[:30]))
 
                 if response:
                     return json.loads(response)
@@ -168,7 +168,7 @@ class Spiral_scan(object):
             file.write("%d %d %f %f\n" % (self.step[0], self.step[1], rx_local, rx_remote))
 
         elif self.state > 0 and not self.check_move(x, y):
-            logging.info("POSITION NOT REACHED, RE-SEND!\n")
+            # logging.info("POSITION NOT REACHED, RE-SEND!\n")
 
             return self.new_position[0], self.new_position[1], self.Run
 
@@ -332,7 +332,7 @@ while Run:
             current = (current_motors['x'], current_motors['y'])
 
             if current == target:
-                logging.info("INFO: Target coordinates reached.\n")
+                # logging.info("INFO: Target coordinates reached.\n")
                 time.sleep(0.5)
                 break
 
@@ -354,7 +354,7 @@ while Run:
                     logging.warning("Stuck more than 10 times. Aborting current move.")
                     break
 
-                logging.warning("Resending move command.")
+                # logging.warning("Resending move command.")
 
                 while True:
                     try:
