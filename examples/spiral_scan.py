@@ -140,7 +140,7 @@ class KoruzaAPI(object):
 
 # Tracking class
 class Spiral_scan(object):
-    N_CIRCLE = 20
+    N_CIRCLE = 100
     BACKLASH = 130  # Backlash
     STEP = 10
 
