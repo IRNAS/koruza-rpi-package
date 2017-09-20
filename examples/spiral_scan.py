@@ -168,7 +168,8 @@ class Spiral_scan(object):
             file.write("%d %d %f %f\n" % (self.step[0], self.step[1], rx_local, rx_remote))
 
         elif self.state > 0 and not self.check_move(x, y):
-            # logging.info("POSITION NOT REACHED, RE-SEND!\n")
+            logging.info("POSITION NOT REACHED, RE-SEND!\n")
+            self.new_position[0] += 1
 
             return self.new_position[0], self.new_position[1], self.Run
 
