@@ -141,7 +141,7 @@ class KoruzaAPI(object):
 # Tracking class
 class Spiral_scan(object):
     N_CIRCLE = 100
-    BACKLASH = 110  # Backlash
+    BACKLASH = 120  # Backlash
     STEP = 50
 
     def __init__(self):
