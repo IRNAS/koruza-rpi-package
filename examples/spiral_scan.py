@@ -141,7 +141,7 @@ class KoruzaAPI(object):
 # Tracking class
 class Spiral_scan(object):
     N_CIRCLE = 100
-    BACKLASH = 130  # Backlash
+    BACKLASH = 0  # Backlash
     STEP = 50
 
     def __init__(self):
@@ -164,8 +164,8 @@ class Spiral_scan(object):
 
         # Check if requested position was reached
         if self.state > 0 and self.check_move(x, y):
-            logging.info("%d %d %f %f\n" % (self.step[0], self.step[1], rx_local, rx_remote))
-            file.write("%d %d %f %f\n" % (self.step[0], self.step[1], rx_local, rx_remote))
+            logging.info("%d %d %d %d %f %f\n" % (self.step[0], self.step[1], self.backlash[0] * Spiral_scan.BACKLASH, self.backlash[1] * Spiral_scan.BACKLASH, rx_local, rx_remote))
+            file.write("%d %d %d %d %f %f\n" % (self.step[0], self.step[1], self.backlash[0] * Spiral_scan.BACKLASH, self.backlash[1] * Spiral_scan.BACKLASH, rx_local, rx_remote))
 
         elif self.state > 0 and not self.check_move(x, y):
             logging.info("POSITION NOT REACHED, RE-SEND!\n")
