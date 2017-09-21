@@ -219,6 +219,9 @@ class Spiral_scan(object):
                 if self.dir < 0:
                     self.backlash[self.coordinate_count] = 1
 
+                elif self.dir > 0:
+                    self.backlash[self.coordinate_count] = 0
+
             # Move
             self.point_count += 1  # Increase points count
             self.step[self.coordinate_count] += self.dir * Spiral_scan.STEP  # Update steps
