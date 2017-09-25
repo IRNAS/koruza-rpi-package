@@ -507,7 +507,7 @@ class Tracking(object):
 
         logging.info("Measurements %f %f %f in range %f \n" % (self.remote_rx_store[0], self.remote_rx_store[1], self.remote_rx_store[2], max - min))
         # Check if range is smaller than 1
-        if max - min < 1 and max > 10:
+        if max - min < 1 and max > -10:
             return True
         elif self.remote_rx_store[2] > -4:
             return True
