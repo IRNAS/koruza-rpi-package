@@ -31,5 +31,6 @@ git checkout tracking_dev
 
 To run the latest script run the following:
 ```
-git pull origin && sudo python examples/alignment.py <remote_host>
+git pull origin && sudo nohup python examples/alignment.py <remote_host> &
+tail -f alignment.log
 ```
