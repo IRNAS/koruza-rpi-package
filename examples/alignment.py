@@ -308,6 +308,7 @@ class Tracking(object):
                     self.backlash.reset_position(self.new_position_x, self.new_position_y) # Update position without changing backlash
                     self.state = 0 # Start alignment
                 else:
+                    logging.info("Wait for other unit!\n")
                     self.remote_x = x_remote
                     time.sleep(15)
 
@@ -427,7 +428,7 @@ class Tracking(object):
             # Check if 25
             if self.meas_count == Tracking.N_IDLE:
                 self.new_average = self.new_average / Tracking.N_IDLE # Calculate average
-                logging.info("Idle state, new remote average: %f\n" % self.new_average)
+                logging.info("Idle state, new remote average: %f best remote average: %f\n" % (self.new_average, self.average))
                 self.count += 1 # Increase average count
 
                 # Start re-aligment
@@ -438,6 +439,7 @@ class Tracking(object):
                     self.start_time = time.time()
                     self.local_rx_store = [-40]*3
                     self.remote_rx_store = [-40]*3
+                    logging.info("Start alignment!\n")
                 # New best average
                 else:
                     # If new best position is found update average
