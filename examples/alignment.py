@@ -359,11 +359,8 @@ class Tracking(object):
 
             # Check if all points have been scanned - find max value position
             if self.count == self.n_points:
-                # Check if main alignment or idle track
-                if self.n_points == Tracking.N_SCAN_POINTS:
-                    self.state = 4 # Check end conditions
-                else:
-                    self.state = 5 # Go back to idle
+
+                self.state = 4 # Check end conditions
 
                 self.count = self.find_max_value() # Find best position
                 self.store_best_rx(self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]) # Store best rx power
@@ -401,10 +398,14 @@ class Tracking(object):
         elif self.state == 4:
 
             # Check if stopping condition was reached
-            if self.check_best_rx():
+            if self.n_points == Tracking.N_SCAN_POINTS_IDLE:
+                self.state = 5 # Check end conditions
+                self.count = 0 # Re-set count
+            elif self.check_best_rx():
                 self.state = 5 # Go to idle
                 self.start_time = time.time() # Store stat time
                 self.new_position_x -= 1 # Mark end of movement
+                self.count = 0 # Re-set count
                 self.backlash.reset_position(self.new_position_x, self.new_position_y) # Update position without changing backlash
                 logging.info("Stopping conditions reached!\n")
             else:
@@ -427,6 +428,7 @@ class Tracking(object):
             if self.meas_count == Tracking.N_IDLE:
                 self.new_average = self.new_average / Tracking.N_IDLE # Calculate average
                 logging.info("Idle state, new remote average: %f\n" % self.new_average)
+                self.count += 1 # Increase average count
 
                 # Start re-aligment
                 if self.new_average < self.average - 3 or (time.time() - self.start_time > 1500 and self.new_average < -15):
@@ -442,17 +444,18 @@ class Tracking(object):
                     if self.new_average > self.average:
                         self.average = self.new_average
 
-                    logging.info("Check cross points in idle state!\n")
-                    self.reset_measurements()
-                    self.state = 3 # Go to measurment state
-                    self.step = Tracking.IDLE_STEP
-                    self.n_points = Tracking.N_SCAN_POINTS_IDLE
-                    # Re-set step size
-                    self.scan_points_x = [0, -self.step, 0, self.step, 0] # Steps cross scan
-                    self.scan_points_y = [0, 0, self.step, 0, -self.step]
-                    # Set initial position
-                    self.initial_position_x = self.new_position_x
-                    self.initial_position_y = self.new_position_y
+                    if self.count == 5:
+                        logging.info("Check cross points in idle state!\n")
+                        self.reset_measurements()
+                        self.state = 3 # Go to measurment state
+                        self.step = Tracking.IDLE_STEP
+                        self.n_points = Tracking.N_SCAN_POINTS_IDLE
+                        # Re-set step size
+                        self.scan_points_x = [0, -self.step, 0, self.step, 0] # Steps cross scan
+                        self.scan_points_y = [0, 0, self.step, 0, -self.step]
+                        # Set initial position
+                        self.initial_position_x = self.new_position_x
+                        self.initial_position_y = self.new_position_y
 
                 # reset
                 self.new_average = 0
