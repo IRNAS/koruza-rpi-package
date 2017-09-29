@@ -56,7 +56,7 @@ class KoruzaAPI(object):
                     method,
                     json.dumps(parameters)
                 ]).strip()
-                #logging.warning("Command sent: {}".format(response))
+                # logging.warning("Command sent: {}".format(response))
 
                 if response:
                     return json.loads(response)
@@ -74,10 +74,10 @@ class KoruzaAPI(object):
                 'params': [self._session, object_name, method, parameters],
             }
             response = requests.post(
-                'http://{}:{}{}'.format(self.host, self.port, self.path),
-                data=json.dumps(payload),
-                headers={'content-type': 'application/json'},
-                timeout=5,
+                    'http://{}:{}{}'.format(self.host, self.port, self.path),
+                    data=json.dumps(payload),
+                    headers={'content-type': 'application/json'},
+                    timeout=5,
             ).json()
 
             if 'result' in response:
@@ -137,20 +137,21 @@ class KoruzaAPI(object):
         """
         return self._call('koruza', 'move_motor', {'x': x, 'y': y, 'z': 0})
 
+
 # Backlash class
 class Backlash(object):
-    BACKLASH = 130 # Backlash
+    BACKLASH = 130  # Backlash
 
     def __init__(self):
         """Initialise all variables"""
 
-        self.backlash_x = 0 # Movement direction
+        self.backlash_x = 0  # Movement direction
         self.backlash_y = 0
 
-        self.new_position_x = 0 # New position
+        self.new_position_x = 0  # New position
         self.new_position_y = 0
 
-        self.old_position_x = 0 # Prev position
+        self.old_position_x = 0  # Prev position
         self.old_position_y = 0
 
     # Initialise backlash by moving forward for backlash value
@@ -164,7 +165,6 @@ class Backlash(object):
         self.backlash_y = 0
 
         return self.new_position_x, self.new_position_y
-
 
     # Get position without backlash, return position with backlash
     def backlash_forward(self, x, y):
@@ -207,17 +207,14 @@ class Backlash(object):
         self.old_position_y = y
 
 
-
-
 # Tracking class
 class Tracking(object):
-
     N_SCAN_POINTS = 9
     N_SCAN_POINTS_IDLE = 5
     N_MES = 5
-    N_STOP = 3 # Number of consecitive times maximum is found at the center
-    N_IDLE = 25 # Number of averaged mesurments in idle state
-    TIMEOUT = 1000 # Timeout for single alignment session
+    N_STOP = 3  # Number of consecitive times maximum is found at the center
+    N_IDLE = 25  # Number of averaged mesurments in idle state
+    TIMEOUT = 1000  # Timeout for single alignment session
     MIN_STEP = 50
     MAX_STEP = 100
     IDLE_STEP = 25
@@ -225,58 +222,66 @@ class Tracking(object):
     def __init__(self):
         """Initialise all variables"""
 
-        self.backlash = Backlash() # Backlash class
+        self.backlash = Backlash()  # Backlash class
 
-        self.step = Tracking.MIN_STEP # Step size
-        self.n_points = Tracking.N_SCAN_POINTS # Number of points to scan
-        self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0] # Steps circle scan
+        self.step = Tracking.MIN_STEP  # Step size
+        self.n_points = Tracking.N_SCAN_POINTS  # Number of points to scan
+        self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step,
+                              0]  # Steps circle scan
         self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step]
 
-        self.initial_position_x = 0 # Innitial position - middle of the square
+        self.initial_position_x = 0  # Innitial position - middle of the square
         self.initial_position_y = 0
 
-        self.new_position_x = 0 # New position
+        self.new_position_x = 0  # New position
         self.new_position_y = 0
 
-        self.remote_x = 0 # Remote position for motion controll
+        self.remote_x = 0  # Remote position for motion controll
 
-        self.local_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS # Local power log
-        self.remote_rx_power_dBm = [0]*Tracking.N_SCAN_POINTS # Remote power log
-        self.local_rx_store = [-40]*3
-        self.remote_rx_store = [-40]*3
+        self.local_rx_power_dBm = [0] * Tracking.N_SCAN_POINTS  # Local power log
+        self.remote_rx_power_dBm = [0] * Tracking.N_SCAN_POINTS  # Remote power log
+        self.local_rx_store = [-40] * 3
+        self.remote_rx_store = [-40] * 3
 
-        self.average = -40 # Power average for idle state
-        self.new_average = 0 # new power average for idle state
+        self.average = -40  # Power average for idle state
+        self.new_average = 0  # new power average for idle state
         # Counters:
-        self.count = 0 # Points count
-        self.meas_count = 0 # Measurement count
+        self.count = 0  # Points count
+        self.meas_count = 0  # Measurement count
 
-        self.state = -2 # States
+        self.state = -2  # States
         self.start_time = time.time()
         self.motors_stuck = 0
 
     def run(self, x, y, x_remote, y_remote, rx_local, rx_remote):
 
         # Check if requested position was reached
-        if self.state > 0 and not self.check_move(x,y):
-            logging.info("POSITION NOT REACHED, RE-SEND!\n")
-            self.new_position_x += 2 # Try changing position
+        if self.state > 0 and not self.check_move(x, y):
+            self.new_position_x += 2  # Try changing position
+            self.backlash.reset_position(self.new_position_x,
+                                         self.new_position_y)  # Update position without changing backlash
+            logging.info("POSITION NOT REACHED, RE-SEND AND INCREASE!\n")
 
             # Check stuck time
             if self.motors_stuck == 0:
                 self.motors_stuck = time.time()
-            elif time.time() - self.motors_stuck > 200:
+            elif time.time() - self.motors_stuck > 300:
                 self.motors_stuck = 0
                 self.state = -2
 
             return self.backlash.backlash_forward(self.new_position_x, self.new_position_y)
+
+        # Check if no signal
+        if rx_remote <= -40 and rx_local <= -40:
+            logging.info("NO SIGNAL, TERMINATE ALIGNMENT!\n")
+            self.state = 100
 
         # STATE: -2: Initialise backlash: only once when algorithm starts
         if self.state == -2:
             logging.info("INITIALISE BACKLASH!\n")
 
             # Define new position
-            self.new_position_x, self.new_position_y = self.backlash.init_backlash(x,y)
+            self.new_position_x, self.new_position_y = self.backlash.init_backlash(x, y)
 
             # Initialise other variables
             self.state = -1
@@ -289,9 +294,12 @@ class Tracking(object):
             # Initialise steps
             if self.new_position_x % 2 == 1:
                 self.new_position_x += 1
-                self.backlash.reset_position(self.new_position_x, self.new_position_y) # Update position without changing backlash
+                self.backlash.reset_position(self.new_position_x,
+                                             self.new_position_y)  # Update position without changing backlash
 
-            logging.info("Go to: %f %f %f %f \n" % (self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+            logging.info("Go to: %f %f %f %f \n" % (
+            self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count],
+            self.remote_rx_power_dBm[self.count]))
 
             return self.new_position_x, self.new_position_y
 
@@ -303,10 +311,11 @@ class Tracking(object):
                 # monitor remote unit for 15s, before attempting to move
                 if self.remote_x == x_remote:
                     logging.info("Remote unit is not moving, start alignment!\n")
-                    self.remote_x = 0 # re-set
-                    self.new_position_x += 1 # Denote start of alignment
-                    self.backlash.reset_position(self.new_position_x, self.new_position_y) # Update position without changing backlash
-                    self.state = 0 # Start alignment
+                    self.remote_x = 0  # re-set
+                    self.new_position_x += 1  # Denote start of alignment
+                    self.backlash.reset_position(self.new_position_x,
+                                                 self.new_position_y)  # Update position without changing backlash
+                    self.state = 0  # Start alignment
                 else:
                     logging.info("Wait for other unit!\n")
                     self.remote_x = x_remote
@@ -318,9 +327,10 @@ class Tracking(object):
         elif self.state == 0:
             # Check for timeout
             if time.time() - self.start_time > Tracking.TIMEOUT:
-                self.state = 5 # Go to idle state
-                self.new_position_x -= 1 # Mark end of the alignment
-                self.backlash.reset_position(self.new_position_x, self.new_position_y) # Update position without changing backlash
+                self.state = 5  # Go to idle state
+                self.new_position_x -= 1  # Mark end of the alignment
+                self.backlash.reset_position(self.new_position_x,
+                                             self.new_position_y)  # Update position without changing backlash
                 logging.info("TIMEOUT!\n")
             else:
                 self.state = 1
@@ -341,7 +351,8 @@ class Tracking(object):
                 self.step = Tracking.MIN_STEP
 
             # Re-set predicted steps for square scan
-            self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step, 0] # Steps circle scan
+            self.scan_points_x = [0, -self.step, -self.step, -self.step, 0, self.step, self.step, self.step,
+                                  0]  # Steps circle scan
             self.scan_points_y = [0, -self.step, 0, self.step, self.step, self.step, 0, -self.step, -self.step]
             self.n_points = Tracking.N_SCAN_POINTS
 
@@ -360,11 +371,11 @@ class Tracking(object):
 
             # Check if all points have been scanned - find max value position
             if self.count == self.n_points:
+                self.state = 4  # Check end conditions
 
-                self.state = 4 # Check end conditions
-
-                self.count = self.find_max_value() # Find best position
-                self.store_best_rx(self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]) # Store best rx power
+                self.count = self.find_max_value()  # Find best position
+                self.store_best_rx(self.local_rx_power_dBm[self.count],
+                                   self.remote_rx_power_dBm[self.count])  # Store best rx power
                 logging.info("ALIGNMENT: Optimal position found at %d! \n" % self.count)
 
             # Define new position
@@ -376,21 +387,25 @@ class Tracking(object):
         # STATE 3: Measurements - wait for 5, calculate average
         elif self.state == 3:
             # Add new measurements
-            self.local_rx_power_dBm[self.count] += rx_local # Local
-            self.remote_rx_power_dBm[self.count] += rx_remote # Remote
-            self.meas_count += 1 # Increment
+            self.local_rx_power_dBm[self.count] += rx_local  # Local
+            self.remote_rx_power_dBm[self.count] += rx_remote  # Remote
+            self.meas_count += 1  # Increment
 
             # Check if 5 measurements are obtained
             if self.meas_count == Tracking.N_MES:
-                self.meas_count = 0 # Reset count
-                self.state = 2 # Go to back to moving state
-                self.local_rx_power_dBm[self.count] /= Tracking.N_MES # Calculate average
+                self.meas_count = 0  # Reset count
+                self.state = 2  # Go to back to moving state
+                self.local_rx_power_dBm[self.count] /= Tracking.N_MES  # Calculate average
                 self.remote_rx_power_dBm[self.count] /= Tracking.N_MES
 
-                logging.info("ALIGNMENT: Step: %d X: %f Y: %f Local: %f Remote: %f" % (self.count, self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                logging.info("ALIGNMENT: Step: %d X: %f Y: %f Local: %f Remote: %f" % (
+                self.count, self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count],
+                self.remote_rx_power_dBm[self.count]))
                 logging.info("BACKLASH: %d %d \n" % (self.backlash.backlash_x, self.backlash.backlash_y))
-                with open('scan_output.txt','a') as f:
-                    f.write("%d %f %f %f %f \n" % (self.count, self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count], self.remote_rx_power_dBm[self.count]))
+                with open('scan_output.txt', 'a') as f:
+                    f.write("%d %f %f %f %f \n" % (
+                    self.count, self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count],
+                    self.remote_rx_power_dBm[self.count]))
                     f.flush()
 
             return self.backlash.backlash_forward(self.new_position_x, self.new_position_y)
@@ -400,14 +415,15 @@ class Tracking(object):
 
             # Check if stopping condition was reached
             if self.n_points == Tracking.N_SCAN_POINTS_IDLE:
-                self.state = 5 # Check end conditions
-                self.count = 0 # Re-set count
+                self.state = 5  # Check end conditions
+                self.count = 0  # Re-set count
             elif self.check_best_rx():
-                self.state = 5 # Go to idle
-                self.start_time = time.time() # Store stat time
-                self.new_position_x -= 1 # Mark end of movement
-                self.count = 0 # Re-set count
-                self.backlash.reset_position(self.new_position_x, self.new_position_y) # Update position without changing backlash
+                self.state = 5  # Go to idle
+                self.start_time = time.time()  # Store stat time
+                self.new_position_x -= 1  # Mark end of movement
+                self.count = 0  # Re-set count
+                self.backlash.reset_position(self.new_position_x,
+                                             self.new_position_y)  # Update position without changing backlash
                 logging.info("Stopping conditions reached!\n")
             else:
                 # Define new center
@@ -427,18 +443,20 @@ class Tracking(object):
 
             # Check if 25
             if self.meas_count == Tracking.N_IDLE:
-                self.new_average = self.new_average / Tracking.N_IDLE # Calculate average
-                logging.info("Idle state, new remote average: %f best remote average: %f\n" % (self.new_average, self.average))
-                self.count += 1 # Increase average count
+                self.new_average = self.new_average / Tracking.N_IDLE  # Calculate average
+                logging.info(
+                    "Idle state, new remote average: %f best remote average: %f\n" % (self.new_average, self.average))
+                self.count += 1  # Increase average count
 
                 # Start re-aligment
-                if self.new_average < self.average - 3 or (time.time() - self.start_time > 1500 and self.new_average < -15):
+                if self.new_average < self.average - 3 or (
+                            time.time() - self.start_time > 1500 and self.new_average < -15):
                     self.average = -40
                     self.state = -1
                     self.reset_measurements()
                     self.start_time = time.time()
-                    self.local_rx_store = [-40]*3
-                    self.remote_rx_store = [-40]*3
+                    self.local_rx_store = [-40] * 3
+                    self.remote_rx_store = [-40] * 3
                     logging.info("Start alignment!\n")
                 # New best average
                 else:
@@ -449,11 +467,11 @@ class Tracking(object):
                     if self.count == 5:
                         logging.info("Check cross points in idle state!\n")
                         self.reset_measurements()
-                        self.state = 3 # Go to measurment state
+                        self.state = 3  # Go to measurment state
                         self.step = Tracking.IDLE_STEP
                         self.n_points = Tracking.N_SCAN_POINTS_IDLE
                         # Re-set step size
-                        self.scan_points_x = [0, -self.step, 0, self.step, 0] # Steps cross scan
+                        self.scan_points_x = [0, -self.step, 0, self.step, 0]  # Steps cross scan
                         self.scan_points_y = [0, 0, self.step, 0, -self.step]
                         # Set initial position
                         self.initial_position_x = self.new_position_x
@@ -464,16 +482,22 @@ class Tracking(object):
                 self.meas_count = 0
 
             time.sleep(1)
-            return x,y
+            return x, y
 
+        # Wait for signal
+        elif self.state == 100:
+            if rx_local > -40 or rx_remote > -40:
+                self.state = -2
+
+            return self.backlash.backlash_forward(self.new_position_x, self.new_position_y)
 
     def reset_measurements(self):
         """Reset rx power and point count"""
         for i in range(Tracking.N_SCAN_POINTS):
             self.local_rx_power_dBm[i] = 0
             self.remote_rx_power_dBm[i] = 0
-        self.count = 0 # Reset points count
-        self.meas_count = 0 # Reset measurements count
+        self.count = 0  # Reset points count
+        self.meas_count = 0  # Reset measurements count
 
     def find_max_value(self):
         """Find max scanned signal"""
@@ -486,7 +510,6 @@ class Tracking(object):
                 pos = i
         return pos
 
-
     def get_combined_power(self, rx_local, rx_remote):
         """Combine signal from local and remote unit based on the distance"""
         max_rx = rx_remote
@@ -494,7 +517,7 @@ class Tracking(object):
 
     def check_move(self, x, y):
         # Convert to position without backlash
-        new_x, new_y = self.backlash.backlash_inverse(x,y)
+        new_x, new_y = self.backlash.backlash_inverse(x, y)
 
         if self.new_position_x - new_x == 0 and self.new_position_y - new_y == 0:
             return True
@@ -515,13 +538,14 @@ class Tracking(object):
         # Find max and min of last three best power measurements
         max = self.remote_rx_store[0]
         min = self.remote_rx_store[0]
-        for i in range(1,3):
+        for i in range(1, 3):
             if max < self.remote_rx_store[i]:
                 max = self.remote_rx_store[i]
             if min > self.remote_rx_store[i]:
                 min = self.remote_rx_store[i]
 
-        logging.info("Measurements %f %f %f in range %f \n" % (self.remote_rx_store[0], self.remote_rx_store[1], self.remote_rx_store[2], max - min))
+        logging.info("Measurements %f %f %f in range %f \n" % (
+        self.remote_rx_store[0], self.remote_rx_store[1], self.remote_rx_store[2], max - min))
         # Check if range is smaller than 1
         if max - min < 1 and max > -10:
             return True
@@ -529,6 +553,7 @@ class Tracking(object):
             return True
         else:
             return False
+
 
 def mw_to_dbm(value):
     """Convert mW value to dBm."""
@@ -541,6 +566,7 @@ def mw_to_dbm(value):
         value_dbm = -40
 
     return value_dbm
+
 
 if len(sys.argv) < 2:
     print("ERROR: Please specify KORUZA unit host.")
@@ -555,12 +581,10 @@ remote = KoruzaAPI(sys.argv[1])
 alignment = Tracking()
 
 # Open log file
-logging.basicConfig(filename='alignment.log',level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename='alignment.log', level=logging.DEBUG, format='%(asctime)s %(message)s')
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-
 # Processing loop.
-stuck_counter = 0
 print("INFO: Starting processing loop.")
 time.sleep(2)
 while True:
@@ -628,7 +652,6 @@ while True:
 
             if current == target:
                 # logging.info("INFO: Target coordinates reached.\n")
-                stuck_counter = 0
                 break
 
             if last_coordinates != current:
@@ -642,21 +665,9 @@ while True:
             if last_coordinates_same is not None and time.time() - last_coordinates_same > 30:
                 print("WARNING: Motors stuck when trying to reach target coordinates.")
                 logging.warning("WARNING: Motors stuck when trying to reach target coordinates.")
-                logging.warning("DEBUG: --- Current status dump ---")
-                logging.warning(local.get_status())
-                logging.warning("DEBUG: ---------------------------")
-
-                stuck_counter += 1
-                if stuck_counter > 1:
-                    logging.warning("DEBUG: Stuck more than once. Algorithm paused, running debug procedure.")
-                    logging.warning("DEBUG: Trying to move motors to (0, 0).")
-                    local.move_motor(0, 0)
-                    logging.warning("DEBUG: Command sent, waiting 15 seconds before status update.")
-                    time.sleep(15)
-                    logging.warning("DEBUG: --- Current status dump ---")
-                    logging.warning(local.get_status())
-                    logging.warning("DEBUG: ---------------------------")
+                logging.warning("WARNING: Coordinates: %d %d" % (target_x, target_y))
                 break
+
         except KoruzaAPIError, error:
             print("WARNING: API error ({}) while confirming local move.".format(error))
             logging.warning("WARNING: API error ({}) while confirming local move.".format(error))
