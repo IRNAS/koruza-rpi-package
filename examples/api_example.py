@@ -140,6 +140,13 @@ class KoruzaAPI(object):
         """
         return self._call('koruza', 'move_motor', {'x': x, 'y': y, 'z': 0})
 
+    def set_alignment(self, state, variables):
+        """Set alignment state.
+
+        Authentication is required.
+        """
+        return self._call('koruza', 'set_alignment', {'state': state, 'variables': variables})
+
 
 def mw_to_dbm(value):
     """Convert mW value to dBm."""
