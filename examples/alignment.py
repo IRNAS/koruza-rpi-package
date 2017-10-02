@@ -137,6 +137,12 @@ class KoruzaAPI(object):
         """
         return self._call('koruza', 'move_motor', {'x': x, 'y': y, 'z': 0})
 
+    def set_alignment(self, state, variables):
+        """Set alignment state.
+        Authentication is required.
+        """
+        return self._call('koruza', 'set_alignment', {'state': state, 'variables': variables})
+
 
 # Backlash class
 class Backlash(object):
@@ -236,8 +242,6 @@ class Tracking(object):
         self.new_position_x = 0  # New position
         self.new_position_y = 0
 
-        self.remote_x = 0  # Remote position for motion controll
-
         self.local_rx_power_dBm = [0] * Tracking.N_SCAN_POINTS  # Local power log
         self.remote_rx_power_dBm = [0] * Tracking.N_SCAN_POINTS  # Remote power log
         self.local_rx_store = [-40] * 3
@@ -254,16 +258,14 @@ class Tracking(object):
         self.start_time = time.time()
         self.motors_stuck = 0
 
-    def run(self, x, y, x_remote, y_remote, rx_local, rx_remote, state_remote):
+    def run(self, x, y, rx_local, rx_remote, state_remote):
 
         # Update remote state
         self.remote_state = state_remote
-        # Report new state
-        local.set_alignment(self.state, [0,0,0,0])
 
         # Check if requested position was reached
         if self.state > 0 and not self.check_move(x, y):
-            self.new_position_x += 2  # Try changing position
+            self.new_position_x += 1  # Try changing position
             self.backlash.reset_position(self.new_position_x,
                                          self.new_position_y)  # Update position without changing backlash
             logging.info("POSITION NOT REACHED, RE-SEND AND INCREASE!\n")
@@ -297,12 +299,6 @@ class Tracking(object):
             # Reset measurements
             self.reset_measurements()
 
-            # Initialise steps
-            if self.new_position_x % 2 == 1:
-                self.new_position_x += 1
-                self.backlash.reset_position(self.new_position_x,
-                                             self.new_position_y)  # Update position without changing backlash
-
             logging.info("Go to: %f %f %f %f \n" % (
             self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count],
             self.remote_rx_power_dBm[self.count]))
@@ -312,35 +308,31 @@ class Tracking(object):
         # STATE -1: Check other unit status before attempting alignment - always check before atempting to move
         elif self.state == -1:
 
-            # If x coordinate is odd, the unit is moving
-            if remote_x % 2 == 0:
-                # monitor remote unit for 15s, before attempting to move
-                if self.remote_x == x_remote:
-                    logging.info("Remote unit is not moving, start alignment!\n")
-                    self.remote_x = 0  # re-set
-                    self.new_position_x += 1  # Denote start of alignment
-                    self.backlash.reset_position(self.new_position_x,
-                                                 self.new_position_y)  # Update position without changing backlash
-                    self.state = 0  # Start alignment
-                else:
-                    logging.info("Wait for other unit!\n")
-                    self.remote_x = x_remote
-                    time.sleep(15)
+            # Check in which state is the other unit
+            if self.remote_state < 0 or self.remote_state > 4:
+
+                logging.info("Remote unit is not moving state: %d, start alignment!\n" % self.remote_state)
+                self.state = 0  # Start alignment
+
+            else:
+                logging.info("Wait for the other unit, remote state: %d!\n" % self.remote_state)
+                time.sleep(15)
 
             return self.backlash.backlash_forward(self.new_position_x, self.new_position_y)
 
-        # STATE 0: Monitor alignment procedure - timeout
+        # STATE 0: Monitor alignment procedure - timeout -  second check moving
         elif self.state == 0:
             # Check for timeout
             if time.time() - self.start_time > Tracking.TIMEOUT:
                 self.state = 5  # Go to idle state
-                self.new_position_x -= 1  # Mark end of the alignment
-                self.backlash.reset_position(self.new_position_x,
-                                             self.new_position_y)  # Update position without changing backlash
                 logging.info("TIMEOUT!\n")
-            else:
+            # Check if remote unit is moving
+            elif self.remote_state < 0 or self.remote_state > 4:
                 self.state = 1
                 logging.info("ALIGNMENT: Alignment started!\n")
+            else:
+                self.state = -2
+                logging.info("Remote unit started to move state %d, wait!\n" % self.remote_state)
 
             return self.backlash.backlash_forward(self.new_position_x, self.new_position_y)
 
@@ -407,7 +399,7 @@ class Tracking(object):
                 logging.info("ALIGNMENT: Step: %d X: %f Y: %f Local: %f Remote: %f" % (
                 self.count, self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count],
                 self.remote_rx_power_dBm[self.count]))
-                logging.info("BACKLASH: %d %d \n" % (self.backlash.backlash_x, self.backlash.backlash_y))
+                logging.info("BACKLASH: %d %d STATE: %d %d\n" % (self.backlash.backlash_x, self.backlash.backlash_y, self.state, self.remote_state))
                 with open('scan_output.txt', 'a') as f:
                     f.write("%d %f %f %f %f \n" % (
                     self.count, self.new_position_x, self.new_position_y, self.local_rx_power_dBm[self.count],
@@ -426,10 +418,8 @@ class Tracking(object):
             elif self.check_best_rx():
                 self.state = 5  # Go to idle
                 self.start_time = time.time()  # Store stat time
-                self.new_position_x -= 1  # Mark end of movement
                 self.count = 0  # Re-set count
-                self.backlash.reset_position(self.new_position_x,
-                                             self.new_position_y)  # Update position without changing backlash
+
                 logging.info("Stopping conditions reached!\n")
             else:
                 # Define new center
@@ -470,8 +460,8 @@ class Tracking(object):
                     if self.new_average > self.average:
                         self.average = self.new_average
 
-                    if self.count == 5:
-                        logging.info("Check cross points in idle state!\n")
+                    if self.count > 4 and self.remote_state == 5:
+                        logging.info("Check cross points in idle state, remote state %d!\n" % self.remote_state)
                         self.reset_measurements()
                         self.state = 3  # Go to measurment state
                         self.step = Tracking.IDLE_STEP
@@ -560,11 +550,10 @@ class Tracking(object):
         else:
             return False
 
-def set_alignment(self, state, variables):
-    """Set alignment state.
-    Authentication is required.
-    """
-    return self._call('koruza', 'set_alignment', {'state': state, 'variables': variables})
+    def get_state(self):
+        # Return current state
+        return self.state
+
 
 def mw_to_dbm(value):
     """Convert mW value to dBm."""
@@ -631,14 +620,16 @@ while True:
     remote_state = remote_status['alignment']['state']
     local_state = local_status['alignment']['state']
 
-    print("INFO: Local state: %d Remote state: %d", local_state, remote_state)
+    # logging.info("INFO: Local state: %d Remote state: %d", local_state, remote_state)
     # print("INFO: Remote SFP RX power (dBm):", remote_rx_power_dbm)
     # print("INFO: Local SFP RX power (dBm):", local_rx_power_dbm)
     # print("INFO: Local motor position (x, y):", local_x, local_y)
 
-    target_x, target_y = alignment.run(local_x, local_y, remote_x, remote_y, local_rx_power_dbm, remote_rx_power_dbm, remote_state)
-
+    target_x, target_y = alignment.run(local_x, local_y, local_rx_power_dbm, remote_rx_power_dbm, remote_state)
     target = (target_x, target_y)
+
+    # Report new state
+    local.set_alignment(alignment.get_state(), [0,0,0,0])
 
     # Check if we need to move.
     current = (local_x, local_y)
