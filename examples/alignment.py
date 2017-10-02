@@ -250,10 +250,16 @@ class Tracking(object):
         self.meas_count = 0  # Measurement count
 
         self.state = -2  # States
+        self.remote_state = -2 # Remote state
         self.start_time = time.time()
         self.motors_stuck = 0
 
-    def run(self, x, y, x_remote, y_remote, rx_local, rx_remote):
+    def run(self, x, y, x_remote, y_remote, rx_local, rx_remote, state_remote):
+
+        # Update remote state
+        self.remote_state = state_remote
+        # Report new state
+        local.set_alignment(self.state, [0,0,0,0])
 
         # Check if requested position was reached
         if self.state > 0 and not self.check_move(x, y):
@@ -554,6 +560,11 @@ class Tracking(object):
         else:
             return False
 
+def set_alignment(self, state, variables):
+    """Set alignment state.
+    Authentication is required.
+    """
+    return self._call('koruza', 'set_alignment', {'state': state, 'variables': variables})
 
 def mw_to_dbm(value):
     """Convert mW value to dBm."""
@@ -617,13 +628,15 @@ while True:
     remote_motors = remote_status['motors']
     remote_x, remote_y = remote_motors['x'], remote_motors['y']
     distance = local_status['camera_calibration']['distance']
+    remote_state = remote_status['alignment']['state']
+    local_state = local_status['alignment']['state']
 
-    # print("INFO: Distance:", distance)
+    print("INFO: Local state: %d Remote state: %d", local_state, remote_state)
     # print("INFO: Remote SFP RX power (dBm):", remote_rx_power_dbm)
     # print("INFO: Local SFP RX power (dBm):", local_rx_power_dbm)
     # print("INFO: Local motor position (x, y):", local_x, local_y)
 
-    target_x, target_y = alignment.run(local_x, local_y, remote_x, remote_y, local_rx_power_dbm, remote_rx_power_dbm)
+    target_x, target_y = alignment.run(local_x, local_y, remote_x, remote_y, local_rx_power_dbm, remote_rx_power_dbm, remote_state)
 
     target = (target_x, target_y)
 
