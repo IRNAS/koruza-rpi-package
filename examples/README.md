@@ -6,10 +6,11 @@ Install required dependencies:
 sudo apt-get install python-requests
 ```
 
-First configure remote unit IP:
+First configure remote unit IP and reboot:
 ```
 sudo uci set koruza.@network[0].peer=<remote units IP address>
 sudo uci commit koruza
+sudo reboot
 ```
 
 go to home directory and clone repository:
