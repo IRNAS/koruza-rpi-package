@@ -588,7 +588,7 @@ while True:
         logging.warning("WARNING: API error ({}) while requesting local status.".format(error))
         continue
 
-remote = local_status['network']['peer']
+remote = KoruzaAPI(local_status['network']['peer'])
 
 # Tracking
 alignment = Tracking()
