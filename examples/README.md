@@ -1,6 +1,16 @@
 # KORUZA tracking algorithm beta
 This is experimental software for auto-tracking of KORUZA units. Be advised you are using this at your own risk and the use of this software may result in hardware malfunction or damage and void the warranty.
 
+
+## Installing the tracking algorithm
+SSH into your unit and run the appropriate commands.
+
+First make sure you are running the latest KORUZA firmware:
+
+```
+sudo koruza-upgrade
+```
+
 Install required dependencies:
 ```
 sudo apt-get install python-requests
@@ -43,5 +53,5 @@ sudo systemctl stop koruza-alignment
 
 To see the real-time log
 ```
-tail -f alignment.log
+tail -f examples/alignment.log
 ```
