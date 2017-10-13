@@ -8,6 +8,7 @@ SSH into your unit and run the appropriate commands.
 First make sure you are running the latest KORUZA firmware:
 
 ```
+sudo mcu-upgrade-firmware master
 sudo koruza-upgrade
 ```
 
