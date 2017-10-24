@@ -51,13 +51,36 @@ Commit the changes by running:
 sudo uci commit koruza
 ```
 
-
 ## Configuring monitoring push location
 
 In order to configure the URL where the unit should push data (e.g., for `push.kw.koruza.net`), run:
 ```bash
 sudo uci set nodewatcher.@agent[0].push_url_template=https://push.kw.koruza.net/push/http/{uuid}
 sudo uci commit nodewatcher
+```
+
+## Configuring webcam zoom and flip
+
+To enable image flipping, run:
+```bash
+sudo uci set koruza.@webcam[0].flip=1  # 0 to disable.
+```
+
+The webcam image is automatically centered on the calibrated position (requires restart). To change
+the zoom in X and/or Y direction, run:
+```bash
+sudo uci set koruza.@webcam[0].zoom_w=0.4  # X direction.
+sudo uci set koruza.@webcam[0].zoom_h=0.4  # Y direction.
+```
+
+Commit the changes by running:
+```
+sudo uci commit koruza
+```
+
+After making the modifications either reboot the device or restart the `mjpg-streamer` service:
+```
+sudo systemctl restart mjpg-streamer
 ```
 
 ---
