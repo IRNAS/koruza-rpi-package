@@ -1,20 +1,29 @@
-# KORUZA examples
+# KORUZA tracking algorithm beta
+This is experimental software for auto-tracking of KORUZA units. Be advised you are using this at your own risk and the use of this software may result in hardware malfunction or damage and void the warranty.
+
+
+## Installing the tracking algorithm
+SSH into your unit and run the appropriate commands.
+
+First make sure you are running the latest KORUZA firmware:
+
+```
+sudo mcu-upgrade-firmware master
+sudo koruza-upgrade
+```
 
 Install required dependencies:
 ```
 sudo apt-get install python-requests
 ```
 
-To run the API example, just specify the remote unit's hostname as an argument:
+First configure remote unit IP and reboot:
 ```
-sudo python api_example.py <remote_host>
+sudo uci set koruza.@network[0].peer=<remote units IP address>
+sudo uci commit koruza
+sudo reboot
 ```
 
-## Development
-To test run the scripts do the following one-time when developing on a new KORUZA unit:
-```
-sudo apt-get install python-requests
-```
 go to home directory and clone repository:
 
 ```
@@ -28,9 +37,22 @@ switch to development branch
 ```
 git checkout tracking_dev
 ```
-
-To run the latest script run the following:
+run to make sure you are on the latest version or to update at a later stage
 ```
-git pull origin && sudo nohup python examples/alignment.py <remote_host> &
-tail -f alignment.log
+git pull origin
+```
+
+To run the algorithm use the following command
+```
+sudo systemctl start koruza-alignment
+```
+
+To stop the algorithm use the following command
+```
+sudo systemctl stop koruza-alignment
+```
+
+To see the real-time log
+```
+tail -f examples/alignment.log
 ```
