@@ -253,8 +253,8 @@ class Tracking(object):
         self.count = 0  # Points count
         self.meas_count = 0  # Measurement count
 
-        self.state = -2  # States
-        self.remote_state = -2 # Remote state
+        self.state = -3  # States
+        self.remote_state = -3 # Remote state
         self.start_time = time.time()
         self.motors_stuck = 0
 
@@ -284,12 +284,18 @@ class Tracking(object):
             logging.info("NO SIGNAL, TERMINATE ALIGNMENT!\n")
             self.state = 100
 
-        # STATE: -2: Initialise backlash: only once when algorithm starts
-        if self.state == -2:
+        # STATE: -3: Initialise backlash: only once when algorithm starts
+        if self.state == -3:
             logging.info("INITIALISE BACKLASH!\n")
 
             # Define new position
             self.new_position_x, self.new_position_y = self.backlash.init_backlash(x, y)
+
+            return self.new_position_x, self.new_position_y
+
+
+        # STATE: -2: Initialise other
+        if self.state == -2:
 
             # Initialise other variables
             self.state = -1
@@ -482,8 +488,9 @@ class Tracking(object):
 
         # Wait for signal
         elif self.state == 100:
-            if rx_local > -40 or rx_remote > -40:
+            if rx_remote > -40 or rx_local > -40:
                 self.state = -2
+                logging.info("Start alignment!\n")
 
             return self.backlash.backlash_forward(self.new_position_x, self.new_position_y)
 
