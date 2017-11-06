@@ -290,7 +290,8 @@ class Tracking(object):
 
             # Define new position
             self.new_position_x, self.new_position_y = self.backlash.init_backlash(x, y)
-
+            self.state = -2
+            
             return self.new_position_x, self.new_position_y
 
 
