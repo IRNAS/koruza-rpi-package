@@ -279,11 +279,6 @@ class Tracking(object):
 
             return self.backlash.backlash_forward(self.new_position_x, self.new_position_y)
 
-        # Check if no signal
-        if rx_remote <= -40 and rx_local <= -40:
-            logging.info("NO SIGNAL, TERMINATE ALIGNMENT!\n")
-            self.state = 100
-
         # STATE: -3: Initialise backlash: only once when algorithm starts
         if self.state == -3:
             logging.info("INITIALISE BACKLASH!\n")
@@ -291,7 +286,7 @@ class Tracking(object):
             # Define new position
             self.new_position_x, self.new_position_y = self.backlash.init_backlash(x, y)
             self.state = -2
-            
+
             return self.new_position_x, self.new_position_y
 
 
@@ -382,6 +377,10 @@ class Tracking(object):
                 self.store_best_rx(self.local_rx_power_dBm[self.count],
                                    self.remote_rx_power_dBm[self.count])  # Store best rx power
                 logging.info("ALIGNMENT: Optimal position found at %d! \n" % self.count)
+                        # Check if no signal
+                if self.remote_rx_power_dBm[self.count] <= -40 and self.local_rx_power_dBm[self.count] <= -40:
+                    logging.info("NO SIGNAL, TERMINATE ALIGNMENT!\n")
+                    self.state = 100
 
             # Define new position
             self.new_position_x = self.initial_position_x + self.scan_points_x[self.count]
