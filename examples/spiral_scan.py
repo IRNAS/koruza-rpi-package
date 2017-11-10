@@ -142,7 +142,7 @@ class KoruzaAPI(object):
 class Spiral_scan(object):
     N_CIRCLE = 100
     BACKLASH = 120  # Backlash
-    STEP = 50
+    STEP = 500
 
     def __init__(self):
         """Initialise all variables"""
@@ -252,16 +252,27 @@ def mw_to_dbm(value):
     return value_dbm
 
 
-if len(sys.argv) < 2:
-    print("ERROR: Please specify KORUZA unit host.")
-    sys.exit(1)
+#if len(sys.argv) < 2:
+#    print("ERROR: Please specify KORUZA unit host.")
+#    sys.exit(1)
 
 if os.getuid() != 0:
     print("ERROR: Must be run as root.")
     sys.exit(1)
 
 local = KoruzaAPI(KoruzaAPI.LOCAL_HOST)
-remote = KoruzaAPI(sys.argv[1])
+# Get remote unit
+while True:
+    try:
+        local_status = local.get_status()
+        break
+    except KoruzaAPIError, error:
+        print("WARNING: API error ({}) while requesting local status.".format(error))
+        logging.warning("WARNING: API error ({}) while requesting local status.".format(error))
+        continue
+
+remote = KoruzaAPI(local_status['network']['peer'])
+# remote = KoruzaAPI(sys.argv[1])
 scan = Spiral_scan()
 Run = True
 
