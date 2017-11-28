@@ -6,6 +6,7 @@ After=ubus.service sfp-driver.service mjpg-streamer.service
 KillMode=process
 ExecStart=/usr/bin/koruza-driver
 Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

@@ -67,12 +67,12 @@ mkdir ${BUILD_DIR}
 
 # Fetch packages.
 echo "Fetching sources."
-fetch_git https://git.lede-project.org/project/libubox.git libubox
+fetch_git https://git.lede-project.org/project/libubox.git libubox f714be125c9b85e184a482bc22e958b5cadfad3a
 fetch_git https://git.lede-project.org/project/ubus.git ubus
 fetch_git https://git.lede-project.org/project/uci.git uci 49ec6efbdac4819033d34f08927d795f83a3932d
 fetch_git https://git.lede-project.org/project/rpcd.git rpcd
 fetch_git https://git.lede-project.org/project/uhttpd.git uhttpd e6cfc911811b904494776938a480e0b77a14124a
-fetch_git https://github.com/IRNAS/koruza-driver.git koruza-driver 0c52277e07fc6ba9cc825f6e912e98a98e1cd51b
+fetch_git https://github.com/IRNAS/koruza-driver.git koruza-driver ece7290363aeabaf7c20617b16a40ce57fd0730b
 fetch_git https://github.com/IRNAS/sfp-driver.git sfp-driver 4ed293576a672fefb8425c1f971f0f71523e6c1d
 fetch_git https://github.com/IRNAS/koruza-ui.git koruza-ui 968013b96458d87c9fc88e646646895faf4053d7
 fetch_git https://github.com/IRNAS/mjpg-streamer.git mjpg-streamer de5e2577c181dce21942eec4af020fce554b1647
@@ -131,6 +131,7 @@ install_file koruza-driver.service lib/systemd/system/koruza-driver.service
 install_file mjpg-streamer.service lib/systemd/system/mjpg-streamer.service
 install_file nodewatcher-agent.service lib/systemd/system/nodewatcher-agent.service
 install_file motor-test.service lib/systemd/system/motor-test.service
+install_file koruza-alignment.service lib/systemd/system/koruza-alignment.service
 install_file unauthenticated-acl.json usr/share/rpcd/acl.d/unauthenticated.json
 install_file koruza-driver-acl.json usr/share/rpcd/acl.d/koruza-driver.json
 install_file sfp-driver-acl.json usr/share/rpcd/acl.d/sfp-driver.json

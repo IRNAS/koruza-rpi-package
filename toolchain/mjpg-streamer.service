@@ -7,8 +7,9 @@ EnvironmentFile=-/var/run/webcam-position.env
 ExecStartPre=/usr/bin/webcam-position
 ExecStart=/usr/bin/mjpg_streamer \
   -o "output_http.so -p 8080 -n" \
-  -i "input_raspicam.so -x ${WIDTH} -y ${HEIGHT} -quality 10 -vf -hf -roi ${ROI_X},${ROI_Y},${ROI_W},${ROI_H} -ex snow"
+  -i "input_raspicam.so -x ${WIDTH} -y ${HEIGHT} -quality 10 ${FLIP} -roi ${ROI_X},${ROI_Y},${ROI_W},${ROI_H} -ex snow"
 Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

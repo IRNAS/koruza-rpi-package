@@ -1,0 +1,11 @@
+[Unit]
+Description=koruza-alignment
+After=koruza-driver.service
+
+[Service]
+WorkingDirectory=/home/pi/koruza-rpi-package/examples
+ExecStart=/usr/bin/python /home/pi/koruza-rpi-package/examples/alignment.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

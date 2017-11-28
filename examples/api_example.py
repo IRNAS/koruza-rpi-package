@@ -140,6 +140,13 @@ class KoruzaAPI(object):
         """
         return self._call('koruza', 'move_motor', {'x': x, 'y': y, 'z': 0})
 
+    def set_alignment(self, state, variables):
+        """Set alignment state.
+
+        Authentication is required.
+        """
+        return self._call('koruza', 'set_alignment', {'state': state, 'variables': variables})
+
 
 def mw_to_dbm(value):
     """Convert mW value to dBm."""
@@ -167,8 +174,8 @@ while True:
     # Get remote unit's status.
     try:
         remote_status = remote.get_status()
-    except requests.exceptions.Timeout:
-        print("WARNING: Timeout while waiting for remote unit.")
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        print("WARNING: Network error while waiting for remote unit.")
         continue
     except KoruzaAPIError, error:
         print("WARNING: API error ({}) while requesting remote status.".format(error))
