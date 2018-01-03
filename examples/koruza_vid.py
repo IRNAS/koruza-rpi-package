@@ -14,6 +14,7 @@ import cv2
 
 # Image storage location.
 CAMERA_STORAGE_PATH = 'camera'
+TEMPLATE_PATH = 'examples/koruza.jpg'
 FRAME_WIDTH = 500
 FRAME_HEIGHT = 390
 
@@ -165,15 +166,18 @@ class Camera(object):
         self.method = eval('cv2.TM_CCOEFF') # Matching method
 
         # Read template
-        self.template = cv2.imread('examples/koruza.jpg',0)
+        self.template = cv2.imread(TEMPLATE_PATH,0)
         self.w, self.h = self.template.shape[::-1]
+        self.top_left = []
+        self.remote_rx = -40
 
         # Ensure storage location exists.
         if not os.path.exists(CAMERA_STORAGE_PATH):
             os.makedirs(CAMERA_STORAGE_PATH)
             print("Dir created.")
 
-    def snapshot(self):
+    def snapshot(self, rx):
+        self.remote_rx = rx # Update power
         now = datetime.datetime.now()
 
         try:
@@ -209,17 +213,53 @@ class Camera(object):
                     )
                 ), matched_frame)
         print("Done")
+        file.write("%d %d\n" % (self.top_left[0], self.top_left[1]))
         time.sleep(self.snapshot_time)
 
     def template_match(self, frame):
+
         res = cv2.matchTemplate(frame,self.template,self.method)
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-        top_left = max_loc
-        bottom_right = (top_left[0] + self.w, top_left[1] + self.h)
-        cv2.rectangle(frame,top_left, bottom_right, 0, 2)
+
+        # Check movement
+        update = False
+        if self.top_left == []:
+            self.top_left = max_loc
+            update = True
+        elif abs(self.top_left[0] - max_loc[0]) < 100 and abs(self.top_left[1] - max_loc[1]) < 100:
+            self.top_left = max_loc
+            update = True
+
+        # If good enough signal update template
+        if self.remote_rx > -10 and update:
+            self.update_template(frame)
+
+        bottom_right = (self.top_left[0] + self.w, self.top_left[1] + self.h)
+        cv2.rectangle(frame,self.top_left, bottom_right, 0, 2)
 
         return frame
 
+    def update_template(self, frame):
+        tmp_frame = frame # Copy snapshot
+        tmp_frame = tmp_frame[self.top_left[1]:self.top_left[1] + self.h, self.top_left[0]:+self.top_left[0] + self.w] # Crop
+        self.template = tmp_frame # Update frame
+
+        # Store
+        cv2.imwrite(TEMPLATE_PATH, tmp_frame)
+        print("TEMPLATE updated!")
+
+
+def mw_to_dbm(value):
+    """Convert mW value to dBm."""
+
+    if value > 0:
+        value_dbm = 10 * math.log10(value)
+    else:
+        value_dbm = -40
+    if value_dbm < -40:
+        value_dbm = -40
+
+    return value_dbm
 
 if os.getuid() != 0:
     print("ERROR: Must be run as root.")
@@ -236,6 +276,8 @@ while True:
         logging.warning("WARNING: API error ({}) while requesting local status.".format(error))
         continue
 
+remote = KoruzaAPI(local_status['network']['peer'])
+
 Run = True
 koruza_camera = Camera()
 file = open('video_analysis.txt','w')
@@ -244,6 +286,18 @@ file = open('video_analysis.txt','w')
 time.sleep(2)
 
 while Run:
+    # Get remote unit's status.
+    try:
+        remote_status = remote.get_status()
+    except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+        print("WARNING: Network error while waiting for remote unit.")
+        logging.warning("WARNING: Network error while waiting for remote unit.")
+        continue
+    except KoruzaAPIError, error:
+        print("WARNING: API error ({}) while requesting remote status.".format(error))
+        logging.warning("WARNING: API error ({}) while requesting remote status.".format(error))
+        continue
+
     # Get local unit's status.
     try:
         local_status = local.get_status()
@@ -252,6 +306,11 @@ while Run:
         logging.warning("WARNING: API error ({}) while requesting local status.".format(error))
         continue
 
+    remote_rx_power_mw = remote_status['sfp']['rx_power'] / 10000.
+    remote_rx_power_dbm = mw_to_dbm(remote_rx_power_mw)
+
     # Take picture
-    koruza_camera.snapshot()
+    koruza_camera.snapshot(remote_rx_power_dbm)
+
+
 
