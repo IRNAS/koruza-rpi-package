@@ -83,6 +83,16 @@ After making the modifications either reboot the device or restart the `mjpg-str
 sudo systemctl restart mjpg-streamer
 ```
 
+## Manually capturing video or images from the webcam
+You can capture video and images manuall from koruza unit using the following method, see [this link](https://www.raspberrypi.org/documentation/usage/camera/raspicam/raspivid.md) for more information on using the raspivid command.
+
+```
+sudo systemctl stop mjpg-streamer
+sudo raspivid -o vid.h264
+sudo systemctl start mjpg-streamer
+```
+
+
 ---
 
 #### License
