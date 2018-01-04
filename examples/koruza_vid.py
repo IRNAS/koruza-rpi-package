@@ -15,8 +15,6 @@ import cv2
 # Image storage location.
 CAMERA_STORAGE_PATH = 'camera'
 TEMPLATE_PATH = 'examples/koruza.jpg'
-FRAME_WIDTH = 500
-FRAME_HEIGHT = 390
 
 
 class KoruzaAPIError(Exception):
@@ -158,10 +156,11 @@ def mw_to_dbm(value):
     return value_dbm
 
 class Camera(object):
-    def __init__(self):
+    def __init__(self, width, height, x_offset, y_offset):
         self._camera = None
         self._recording_start = None
-        self.resolution = '1280x720'
+        self.width = width
+        self.heigth = 720
         self.snapshot_time = 60 # Time between snaps
         self.method = eval('cv2.TM_CCOEFF') # Matching method
 
@@ -170,6 +169,8 @@ class Camera(object):
         self.w, self.h = self.template.shape[::-1]
         self.top_left = []
         self.remote_rx = -40
+        self.offset_x = x_offset
+        self.offset_y = y_offset
 
         # Ensure storage location exists.
         if not os.path.exists(CAMERA_STORAGE_PATH):
@@ -182,7 +183,9 @@ class Camera(object):
 
         try:
             self._camera = picamera.PiCamera()
-            self._camera.resolution = self.resolution
+            self._camera.resolution = (self.width, self.heigth)
+            self._camera.hflip = True
+            self._camera.vflip = True
             print("Camera initialised.")
         except picamera.PiCameraError:
             print("ERROR: Failed to initialize camera.")
@@ -193,7 +196,7 @@ class Camera(object):
             # Store image to ndarray and convert it to grayscale
             frame = cv2.cvtColor(output.array, cv2.COLOR_BGR2GRAY)
             # Crop frame
-            frame = frame[100:100+FRAME_HEIGHT, 200:200+FRAME_WIDTH]
+            frame = frame[self.offset_y:self.offset_y+0.4*self.heigth, self.offset_x:self.offset_x+self.width]
 
         self._camera.close()
         print("Image captured")
@@ -203,17 +206,18 @@ class Camera(object):
         # Save
         cv2.imwrite(os.path.join(
                     CAMERA_STORAGE_PATH,
-                    'snapshot-{year}-{month:02d}-{day:02d}-{hour:02d}-{minute:02d}-{second:02d}.jpg'.format(
+                    'snapshot-{year}-{month:02d}-{day:02d}-{hour:02d}-{minute:02d}-{second:02d}-{RX:02f}.jpg'.format(
                         year=now.year,
                         month=now.month,
                         day=now.day,
                         hour=now.hour,
                         minute=now.minute,
                         second=now.second,
+                        RX=self.remote_rx,
                     )
                 ), matched_frame)
         print("Done")
-        file.write("%d %d\n" % (self.top_left[0], self.top_left[1]))
+        file.write("%s X:%d Y:%d RX:%.2f\n" % (now, self.top_left[0], self.top_left[1], self.remote_rx))
         time.sleep(self.snapshot_time)
 
     def template_match(self, frame):
@@ -226,12 +230,12 @@ class Camera(object):
         if self.top_left == []:
             self.top_left = max_loc
             update = True
-        elif abs(self.top_left[0] - max_loc[0]) < 100 and abs(self.top_left[1] - max_loc[1]) < 100:
+        elif abs(self.top_left[0] - max_loc[0]) < 5 and abs(self.top_left[1] - max_loc[1]) < 5:
             self.top_left = max_loc
             update = True
 
         # If good enough signal update template
-        if self.remote_rx > -10 and update:
+        if update:
             self.update_template(frame)
 
         bottom_right = (self.top_left[0] + self.w, self.top_left[1] + self.h)
@@ -249,24 +253,11 @@ class Camera(object):
         print("TEMPLATE updated!")
 
 
-def mw_to_dbm(value):
-    """Convert mW value to dBm."""
-
-    if value > 0:
-        value_dbm = 10 * math.log10(value)
-    else:
-        value_dbm = -40
-    if value_dbm < -40:
-        value_dbm = -40
-
-    return value_dbm
-
 if os.getuid() != 0:
     print("ERROR: Must be run as root.")
     sys.exit(1)
 
 local = KoruzaAPI(KoruzaAPI.LOCAL_HOST)
-# Get remote unit
 while True:
     try:
         local_status = local.get_status()
@@ -276,10 +267,15 @@ while True:
         logging.warning("WARNING: API error ({}) while requesting local status.".format(error))
         continue
 
+width = local_status['camera_calibration']['width']
+height = local_status['camera_calibration']['height']
+offset_x = local_status['camera_calibration']['offset_x']
+offset_y = local_status['camera_calibration']['offset_y']
+
 remote = KoruzaAPI(local_status['network']['peer'])
 
 Run = True
-koruza_camera = Camera()
+koruza_camera = Camera(width, height, offset_x, offset_y)
 file = open('video_analysis.txt','w')
 
 # Processing loop.
