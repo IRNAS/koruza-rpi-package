@@ -1,5 +1,23 @@
 # KORUZA Software Package
 
+To set-up a system running the KORUZA software package one may choose vuilding from the latest source or using a pre-compiled binary.
+
+## Install with pre-compiled binary
+To install a pre-compiled binary a Raspberry Pi device is required, by default Raspberry Pi Compute Module (V1 or V3), but versions should work if correct GPIO pins are configured for different features. Install Raspbian Lite operating system, configure it correctly and then install the pre-compiled package:
+
+```
+wget https://github.com/IRNAS/koruza-rpi-package/releases/download/stable/koruza.deb
+sudo dpkg -i koruza.deb
+```
+
+Once package is installed, it can be simply upgraded running:
+```
+sudo koruza-upgrade
+```
+which will fetch the latest stable release and install it.
+
+## Build from source
+
 To build the software package for the ARM-based KORUZA compute module, you
 need a working Docker installation. Then run the following:
 ```bash
