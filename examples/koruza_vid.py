@@ -12,10 +12,6 @@ import picamera.array
 import os
 import cv2
 
-# Image storage location.
-CAMERA_STORAGE_PATH = 'camera'
-TEMPLATE_PATH = 'examples/koruza.jpg'
-
 
 class KoruzaAPIError(Exception):
     """KORUZA API error."""
@@ -156,34 +152,59 @@ def mw_to_dbm(value):
     return value_dbm
 
 class Camera(object):
-    def __init__(self, width, height, x_offset, y_offset):
-        self._camera = None
-        self._recording_start = None
-        self.width = width
-        self.heigth = 720
-        self.snapshot_time = 60 # Time between snaps
-        self.method = eval('cv2.TM_CCOEFF') # Matching method
 
-        # Read template
-        self.template = cv2.imread(TEMPLATE_PATH,0)
-        self.w, self.h = self.template.shape[::-1]
-        self.top_left = []
-        self.remote_rx = -40
-        self.offset_x = x_offset
-        self.offset_y = y_offset
+    CAMERA_STORAGE_PATH = 'camera'
+    TEMPLATE_PATH = 'examples/koruza.jpg'
+    RESOLUTION = (1280,720)
+    TEMPLATE_OFFSET = 17
+    TEMPLATE_SIZE = 2 * TEMPLATE_OFFSET + 1
+    SNAPSHOT_TIME = 60
+    METHOD = eval('cv2.TM_CCOEFF') # Matching method
+    SHIFT_THRESHOLD = 10
+
+    def __init__(self, off_x, off_y):
+        self._camera = None
+        self._offset_x = offset_x
+        self._offset_y = offset_y
 
         # Ensure storage location exists.
-        if not os.path.exists(CAMERA_STORAGE_PATH):
-            os.makedirs(CAMERA_STORAGE_PATH)
+        if not os.path.exists(self.CAMERA_STORAGE_PATH):
+            os.makedirs(self.CAMERA_STORAGE_PATH)
             print("Dir created.")
 
-    def snapshot(self, rx):
-        self.remote_rx = rx # Update power
-        now = datetime.datetime.now()
+        # Set crop data
+        self._crop_x = self._offset_x - 0.2 * self.RESOLUTION[0]
+        if self._crop_x < 0:
+            self._crop_x = 0
+        elif self._crop_x + 0.4 * self.RESOLUTION[0] > self.RESOLUTION[0]:
+            self._crop_x = self.RESOLUTION[0] * 0.6
+
+        self._crop_y = self._offset_y - 0.2 * self.RESOLUTION[1]
+        if self._crop_y < 0:
+            self._crop_y = 0
+        elif self._crop_y + 0.4 * self.RESOLUTION[1] > self.RESOLUTION[1]:
+            self._crop_y = self.RESOLUTION[1] * 0.6
+
+        # Top left corner of the template with respect to cropped snapshot
+        self._initial_top_left = (self._offset_x - self.TEMPLATE_OFFSET - self._crop_x, self._offset_y - self.TEMPLATE_OFFSET - self._crop_y)
+        self._top_left = self._initial_top_left
+
+        print(self._crop_x, self._crop_y)
+        print(self._top_left)
+
+        # Read template
+        self._template = []
+        frame = self.snapshot()
+        self.update_template(frame)
+        cv2.imwrite(os.path.join(self.CAMERA_STORAGE_PATH,'test-template.jpg'),self._template)
+        self._remote_rx = -40
+
+
+    def snapshot(self):
 
         try:
             self._camera = picamera.PiCamera()
-            self._camera.resolution = (self.width, self.heigth)
+            self._camera.resolution = self.RESOLUTION
             self._camera.hflip = True
             self._camera.vflip = True
             print("Camera initialised.")
@@ -195,17 +216,28 @@ class Camera(object):
             self._camera.capture(output, format='bgr')
             # Store image to ndarray and convert it to grayscale
             frame = cv2.cvtColor(output.array, cv2.COLOR_BGR2GRAY)
-            # Crop frame
-            frame = frame[self.offset_y:self.offset_y+0.4*self.heigth, self.offset_x:self.offset_x+self.width]
+            cv2.imwrite(os.path.join(self.CAMERA_STORAGE_PATH,'test-snapshot.jpg'),frame)
+            # Crop
+            frame = frame[self._crop_y:self._crop_y + 0.4 * self.RESOLUTION[1], self._crop_x:self._crop_x + 0.4 * self.RESOLUTION[0]]
 
         self._camera.close()
-        print("Image captured")
+
+        return frame
+
+
+    def track(self, rx):
+
+        self._remote_rx = rx # Update power
+        now = datetime.datetime.now()
+
+        # Take new frame
+        frame = self.snapshot()
 
         # Match template
         matched_frame = self.template_match(frame)
         # Save
         cv2.imwrite(os.path.join(
-                    CAMERA_STORAGE_PATH,
+                    self.CAMERA_STORAGE_PATH,
                     'snapshot-{year}-{month:02d}-{day:02d}-{hour:02d}-{minute:02d}-{second:02d}-{RX:02f}.jpg'.format(
                         year=now.year,
                         month=now.month,
@@ -213,43 +245,54 @@ class Camera(object):
                         hour=now.hour,
                         minute=now.minute,
                         second=now.second,
-                        RX=self.remote_rx,
+                        RX=self._remote_rx,
                     )
                 ), matched_frame)
+
+        # Save template
+        cv2.imwrite(os.path.join(
+                    self.CAMERA_STORAGE_PATH,
+                    'template-{year}-{month:02d}-{day:02d}-{hour:02d}-{minute:02d}-{second:02d}-{RX:02f}.jpg'.format(
+                        year=now.year,
+                        month=now.month,
+                        day=now.day,
+                        hour=now.hour,
+                        minute=now.minute,
+                        second=now.second,
+                        RX=self._remote_rx,
+                    )
+                ), self._template)
         print("Done")
-        file.write("%s X:%d Y:%d RX:%.2f\n" % (now, self.top_left[0], self.top_left[1], self.remote_rx))
-        time.sleep(self.snapshot_time)
+        file.write("%s X:%d Y:%d RX:%.2f\n" % (now, self._top_left[0], self._top_left[1], self._remote_rx))
+
+        time.sleep(self.SNAPSHOT_TIME)
 
     def template_match(self, frame):
 
-        res = cv2.matchTemplate(frame,self.template,self.method)
+        res = cv2.matchTemplate(frame,self._template,self.METHOD)
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
 
         # Check movement
         update = False
-        if self.top_left == []:
-            self.top_left = max_loc
+        if abs(self._top_left[0] - max_loc[0]) < self.SHIFT_THRESHOLD and abs(self._top_left[1] - max_loc[1]) < self.SHIFT_THRESHOLD:
+            self._top_left = max_loc
             update = True
-        elif abs(self.top_left[0] - max_loc[0]) < 5 and abs(self.top_left[1] - max_loc[1]) < 5:
-            self.top_left = max_loc
-            update = True
+        else:
+            file.write("WARNING: X:%d Y:%d RX:%.2f\n" % (max_loc[0], max_loc[1], self._remote_rx))
 
         # If good enough signal update template
         if update:
             self.update_template(frame)
 
-        bottom_right = (self.top_left[0] + self.w, self.top_left[1] + self.h)
-        cv2.rectangle(frame,self.top_left, bottom_right, 0, 2)
+        bottom_right = (self._top_left[0] + self.TEMPLATE_SIZE, self._top_left[1] + self.TEMPLATE_SIZE)
+        cv2.rectangle(frame,self._top_left, bottom_right, 0, 2)
 
         return frame
 
     def update_template(self, frame):
-        tmp_frame = frame # Copy snapshot
-        tmp_frame = tmp_frame[self.top_left[1]:self.top_left[1] + self.h, self.top_left[0]:+self.top_left[0] + self.w] # Crop
-        self.template = tmp_frame # Update frame
+        self._template = frame.copy() # Copy snapshot
+        self._template = self._template[self._top_left[1]:self._top_left[1] + self.TEMPLATE_SIZE, self._top_left[0]:self._top_left[0] + self.TEMPLATE_SIZE] # Crop
 
-        # Store
-        cv2.imwrite(TEMPLATE_PATH, tmp_frame)
         print("TEMPLATE updated!")
 
 
@@ -267,15 +310,13 @@ while True:
         logging.warning("WARNING: API error ({}) while requesting local status.".format(error))
         continue
 
-width = local_status['camera_calibration']['width']
-height = local_status['camera_calibration']['height']
-offset_x = local_status['camera_calibration']['offset_x']
-offset_y = local_status['camera_calibration']['offset_y']
+offset_x = 690
+offset_y = 375
 
 remote = KoruzaAPI(local_status['network']['peer'])
 
 Run = True
-koruza_camera = Camera(width, height, offset_x, offset_y)
+koruza_camera = Camera(offset_x, offset_y)
 file = open('video_analysis.txt','w')
 
 # Processing loop.
@@ -306,7 +347,7 @@ while Run:
     remote_rx_power_dbm = mw_to_dbm(remote_rx_power_mw)
 
     # Take picture
-    koruza_camera.snapshot(remote_rx_power_dbm)
+    koruza_camera.track(remote_rx_power_dbm)
 
 
 
