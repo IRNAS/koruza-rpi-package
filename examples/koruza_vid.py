@@ -177,16 +177,16 @@ class Camera(object):
         if self._crop_x < 0:
             self._crop_x = 0
         elif self._crop_x + 0.4 * self.RESOLUTION[0] > self.RESOLUTION[0]:
-            self._crop_x = self.RESOLUTION[0] * 0.6
+            self._crop_x = int(self.RESOLUTION[0] * 0.6)
 
         self._crop_y = self._offset_y - 0.2 * self.RESOLUTION[1]
         if self._crop_y < 0:
             self._crop_y = 0
         elif self._crop_y + 0.4 * self.RESOLUTION[1] > self.RESOLUTION[1]:
-            self._crop_y = self.RESOLUTION[1] * 0.6
+            self._crop_y = int(self.RESOLUTION[1] * 0.6)
 
         # Top left corner of the template with respect to cropped snapshot
-        self._initial_top_left = (self._offset_x - self.TEMPLATE_OFFSET - self._crop_x, self._offset_y - self.TEMPLATE_OFFSET - self._crop_y)
+        self._initial_top_left = (int(self._offset_x - self.TEMPLATE_OFFSET - self._crop_x), int(self._offset_y - self.TEMPLATE_OFFSET - self._crop_y))
         self._top_left = self._initial_top_left
 
         print(self._crop_x, self._crop_y)
