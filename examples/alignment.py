@@ -492,7 +492,7 @@ class Tracking(object):
                 self.new_average = 0
                 self.meas_count = 0
 
-            time.sleep(1)
+            #time.sleep(1)
             return x, y
 
         # Wait for signal
