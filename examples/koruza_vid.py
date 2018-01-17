@@ -310,8 +310,8 @@ while True:
         logging.warning("WARNING: API error ({}) while requesting local status.".format(error))
         continue
 
-offset_x = 690
-offset_y = 375
+offset_x = 590
+offset_y = 327
 
 remote = KoruzaAPI(local_status['network']['peer'])
 
