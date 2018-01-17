@@ -327,7 +327,7 @@ class Tracking(object):
 
             else:
                 logging.info("Wait for the other unit, remote state: %d!\n" % self.remote_state)
-                time.sleep(15)
+                #time.sleep(15)
 
             return self.backlash.backlash_forward(self.new_position_x, self.new_position_y)
 
@@ -342,7 +342,7 @@ class Tracking(object):
                 self.state = 1
                 logging.info("ALIGNMENT: Alignment started!\n")
             else:
-                self.state = -2
+                self.state = -1
                 logging.info("Remote unit started to move state %d, wait!\n" % self.remote_state)
 
             return self.backlash.backlash_forward(self.new_position_x, self.new_position_y)
@@ -440,7 +440,7 @@ class Tracking(object):
                 # Define new center
                 self.new_position_x = self.initial_position_x + 2 * self.scan_points_x[self.count]
                 self.new_position_y = self.initial_position_y + 2 * self.scan_points_y[self.count]
-                self.state = 0
+                self.state = -1
                 self.reset_measurements()
 
             return self.backlash.backlash_forward(self.new_position_x, self.new_position_y)
