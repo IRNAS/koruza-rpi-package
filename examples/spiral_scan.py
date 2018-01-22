@@ -205,6 +205,7 @@ class Spiral_scan(object):
 
                         # Move to initial position
                         self.Run = False
+                        logging.info("STOP return to %d %d \n" % (self.initial_position[0], self.initial_position[0]))
                         return self.initial_position[0], self.initial_position[1], self.Run
 
                     # Update points
