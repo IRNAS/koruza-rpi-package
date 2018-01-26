@@ -140,9 +140,9 @@ class KoruzaAPI(object):
 
 # Tracking class
 class Spiral_scan(object):
-    N_CIRCLE = 20
+    N_CIRCLE = 5
     BACKLASH = 120  # Backlash
-    STEP = 100
+    STEP = 400
 
     def __init__(self):
         """Initialise all variables"""
@@ -205,7 +205,7 @@ class Spiral_scan(object):
 
                         # Move to initial position
                         self.Run = False
-                        logging.info("STOP return to %d %d \n" % (self.initial_position[0], self.initial_position[0]))
+                        logging.info("STOP return to %d %d \n" % (self.initial_position[0], self.initial_position[1]))
                         return self.initial_position[0], self.initial_position[1], self.Run
 
                     # Update points
