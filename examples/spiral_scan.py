@@ -142,7 +142,7 @@ class KoruzaAPI(object):
 class Spiral_scan(object):
     N_CIRCLE = 10
     BACKLASH = 120  # Backlash
-    STEP = 200
+    STEP = 100
 
     def __init__(self):
         """Initialise all variables"""
