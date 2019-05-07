@@ -109,7 +109,22 @@ sudo systemctl stop mjpg-streamer
 sudo raspivid -o vid.h264
 sudo systemctl start mjpg-streamer
 ```
+## Setting a static IP address:
+The static IP address can be configured by establishing an ssh connection to the unit `pi@<ip address>` with default password `raspberry`.
 
+Then use the following command to edit config:
+
+```sudo nano /etc/dhcpcd.conf```
+ and copy paste this, editting the settings:
+ 
+ ```
+ interface eth0
+
+static ip_address=192.168.0.10/24
+static routers=192.168.0.1
+static domain_name_servers=192.168.0.1
+```
+then reboot by issuing `sudo reboot`
 
 ---
 
