@@ -126,6 +126,9 @@ static domain_name_servers=192.168.0.1
 ```
 then reboot by issuing `sudo reboot`
 
+## Testing the camera stream
+The internal camera stream can be in experimetnal mode accessed via:  `<ip>:8080/?action=stream `
+
 ---
 
 #### License
